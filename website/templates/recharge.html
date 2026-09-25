@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarStack - 首页</title>
+    <title>积分充值 - StarStack</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{% if has_cyber_tshirt %}cyber-tshirt{% endif %}">
     <nav class="navbar">
         <div class="nav-brand">⭐ StarStack</div>
         <ul class="nav-links">
-            <li><a href="{{ url_for('home') }}" class="active">首页</a></li>
+            <li><a href="{{ url_for('home') }}">首页</a></li>
             <li><a href="{{ url_for('message_board') }}">留言板</a></li>
             {% if username and '游戏手柄' in unlocked_content %}
             <li><a href="{{ url_for('game_center') }}">游戏</a></li>
@@ -37,7 +37,7 @@
                         <span class="nav-caret">▾</span>
                     </button>
                     <div class="nav-user-menu" role="menu">
-                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item" role="menuitem">💰 充值</a>
+                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item nav-user-menu-item-active" role="menuitem">💰 充值</a>
                         <a href="{{ url_for('store') }}" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
                         <a href="{{ url_for('inventory') }}" class="nav-user-menu-item" role="menuitem">🎒 背包</a>
                         <a href="{{ url_for('tasks_page') }}" class="nav-user-menu-item" role="menuitem">📋 任务</a>
@@ -74,42 +74,47 @@
         {% endwith %}
 
         <section class="hero">
-            <h1>欢迎来到星栈</h1>
-            <p>StarStack一切从这里开始 ✨</p>
-            {% if not username %}
-            <p style="margin-top:1rem;">
-                <a class="btn btn-primary" href="{{ url_for('login') }}">登录</a>
-                <a class="btn btn-vip" href="{{ url_for('register') }}">注册新账号</a>
-            </p>
-            {% endif %}
+            <h1>💰 积分充值</h1>
+            <p>用微信支付为你的 StarStack 账户充值积分，立刻用于商店购物。</p>
+            <p class="muted">当前积分：<strong>💰 {{ points }}</strong>{% if is_vip %} · VIP 9 折生效中{% endif %}</p>
         </section>
 
         <section class="settings-section">
-            <h2>🚀 快速开始</h2>
-            <ul class="vip-perks" style="font-size:1rem;">
-                <li>💬 <a href="{{ url_for('message_board') }}">留言板</a> — 发表想法，浏览其他用户的留言</li>
-                <li>🛒 <a href="{{ url_for('store') }}">商店</a> — 用积分兑换教程、游戏、影视中心、VIP 会员</li>
-                <li>🎒 <a href="{{ url_for('inventory') }}">背包</a> — 查看已购商品和使用效果</li>
-                <li>📋 <a href="{{ url_for('tasks_page') }}">任务</a> — 完成每日 / 固定任务赚积分</li>
-                <li>👑 <a href="{{ url_for('vip_page') }}">VIP 会员</a> — 解锁全部教程 + 影视音乐 + 9 折优惠</li>
-            </ul>
+            <h2>选择充值套餐</h2>
+            <div class="item-grid">
+                {% for key, pkg in packages.items() %}
+                <div class="item-card vip-card">
+                    <h3>{{ pkg.label }}</h3>
+                    <p class="item-desc">
+                        💰 {{ pkg.points }} 积分
+                        {% if pkg.bonus_points > 0 %}
+                            <span class="badge badge-vip">+{{ pkg.bonus_points }} 赠送</span>
+                        {% endif %}
+                    </p>
+                    <p class="item-effect">
+                        实付：<strong>¥{{ pkg.price_cny }}</strong>
+                        {% if pkg.bonus_points > 0 %}
+                            · 到账 <strong>💰 {{ pkg.points + pkg.bonus_points }}</strong> 积分
+                        {% endif %}
+                    </p>
+                    <div class="item-footer">
+                        <span class="item-price">¥{{ pkg.price_cny }}</span>
+                        <button class="btn btn-vip recharge-buy-btn" data-package-key="{{ key }}">
+                            立即充值
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </section>
+
+        <p class="muted" style="text-align:center;margin-top:1.5rem;">
+            ⚠️ 这是模拟支付界面。点击 "我已支付" 后将立即到账，无需真实付款。
+        </p>
     </main>
 
-    <!-- 流星雨背景：仅在赛博T恤激活时显示 -->
-    <div class="meteor-shower" aria-hidden="true">
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-    </div>
-
     <canvas id="mouseTrailCanvas" class="mouse-trail-canvas {% if not mouse_effect_enabled %}hidden{% endif %}"></canvas>
-
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/recharge.js') }}"></script>
 </body>
 </html>

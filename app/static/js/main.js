@@ -112,4 +112,34 @@
             setTimeout(() => el.remove(), 500);
         }, 4000);
     });
+
+    // ---------- 导航栏头像下拉菜单 ----------
+    function closeAllDropdowns(except) {
+        document.querySelectorAll('.nav-user-dropdown.open').forEach(d => {
+            if (d !== except) {
+                d.classList.remove('open');
+                const t = d.querySelector('.nav-user-trigger');
+                if (t) t.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    document.querySelectorAll('.nav-user-trigger').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dd = btn.closest('.nav-user-dropdown');
+            const willOpen = !dd.classList.contains('open');
+            closeAllDropdowns(dd);
+            dd.classList.toggle('open', willOpen);
+            btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.nav-user-dropdown')) closeAllDropdowns(null);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAllDropdowns(null);
+    });
 })();

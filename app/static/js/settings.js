@@ -12,45 +12,16 @@
         if (!preview || !valueEl) return;
         const v = valueEl.textContent.trim();
 
-        if (v.startsWith('default:')) {
-            const color = v.replace('default:', '');
-            preview.style.background = color;
-            preview.textContent = '';
-        } else if (v.startsWith('/static/')) {
+        if (v.startsWith('/static/')) {
             preview.style.background = `url(${v}) center/cover no-repeat`;
             preview.textContent = '';
         } else {
-            preview.style.background = '#3498db';
+            // 默认（包括 default:none、空值）
+            preview.style.background = "url('/static/avatars/default.svg') center/cover no-repeat, #0f1535";
+            preview.textContent = '';
         }
     }
     renderAvatar();
-
-    // ---------- 颜色选择 ----------
-    document.querySelectorAll('.color-dot').forEach(dot => {
-        dot.addEventListener('click', async () => {
-            const color = dot.dataset.color;
-            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-            dot.classList.add('active');
-
-            try {
-                const r = await fetch('/settings/avatar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ default_color: color }),
-                });
-                const data = await r.json();
-                if (data.success) {
-                    document.getElementById('avatarValue').textContent = `default:${color}`;
-                    renderAvatar();
-                    showFlash('success', '默认头像已更新');
-                } else {
-                    showFlash('error', data.msg || '更新失败');
-                }
-            } catch (err) {
-                showFlash('error', '网络错误：' + err.message);
-            }
-        });
-    });
 
     // ---------- 头像上传 ----------
     const uploadForm = document.getElementById('avatarUploadForm');
@@ -67,6 +38,31 @@
                     showFlash('success', '头像上传成功');
                 } else {
                     showFlash('error', data.msg || '上传失败');
+                }
+            } catch (err) {
+                showFlash('error', '网络错误：' + err.message);
+            }
+        });
+    }
+
+    // ---------- 恢复默认头像 ----------
+    const resetForm = document.getElementById('avatarResetForm');
+    if (resetForm) {
+        resetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const r = await fetch('/settings/avatar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'action=reset',
+                });
+                const data = await r.json();
+                if (data.success) {
+                    document.getElementById('avatarValue').textContent = 'default:none';
+                    renderAvatar();
+                    showFlash('success', '已恢复默认头像');
+                } else {
+                    showFlash('error', data.msg || '重置失败');
                 }
             } catch (err) {
                 showFlash('error', '网络错误：' + err.message);
@@ -110,6 +106,33 @@
             } catch (err) {
                 showFlash('error', '网络错误：' + err.message);
             }
+        });
+    }
+
+    // ---------- 复制 MC 服务器地址 ----------
+    const copyMcBtn = document.getElementById('copyMcServerBtn');
+    if (copyMcBtn) {
+        copyMcBtn.addEventListener('click', async () => {
+            const host = (document.getElementById('mcServerHost') || {}).textContent || '';
+            const port = (document.getElementById('mcServerPort') || {}).textContent || '';
+            const addr = `${host}:${port}`;
+            const original = copyMcBtn.textContent;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(addr);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = addr;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    ta.remove();
+                }
+                copyMcBtn.textContent = '✓ 已复制';
+            } catch (err) {
+                copyMcBtn.textContent = '复制失败';
+            }
+            setTimeout(() => { copyMcBtn.textContent = original; }, 2000);
         });
     }
 

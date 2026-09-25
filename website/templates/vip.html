@@ -3,21 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarStack - 首页</title>
+    <title>VIP 会员 - StarStack</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{% if has_cyber_tshirt %}cyber-tshirt{% endif %}">
     <nav class="navbar">
         <div class="nav-brand">⭐ StarStack</div>
         <ul class="nav-links">
-            <li><a href="{{ url_for('home') }}" class="active">首页</a></li>
+            <li><a href="{{ url_for('home') }}">首页</a></li>
             <li><a href="{{ url_for('message_board') }}">留言板</a></li>
-            {% if username and '游戏手柄' in unlocked_content %}
-            <li><a href="{{ url_for('game_center') }}">游戏</a></li>
-            {% endif %}
-            {% if username and '影视播放器' in unlocked_content %}
-            <li><a href="{{ url_for('video_player') }}">影视</a></li>
-            {% endif %}
+            <li><a href="{{ url_for('vip_page') }}" class="active">VIP</a></li>
         </ul>
         <div class="nav-user">
             {% if has_clock %}<span class="nav-clock" id="navClock">--:--:--</span>{% endif %}
@@ -64,52 +59,68 @@
 
     <main class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-area">
-            {% for category, msg in messages %}
-            <div class="flash flash-{{ category }}">{{ msg }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
+            {% if messages %}
+                <div class="flash-area">
+                    {% for category, msg in messages %}
+                        <div class="flash flash-{{ category }}">{{ msg }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
         {% endwith %}
 
         <section class="hero">
-            <h1>欢迎来到星栈</h1>
-            <p>StarStack一切从这里开始 ✨</p>
-            {% if not username %}
-            <p style="margin-top:1rem;">
-                <a class="btn btn-primary" href="{{ url_for('login') }}">登录</a>
-                <a class="btn btn-vip" href="{{ url_for('register') }}">注册新账号</a>
-            </p>
-            {% endif %}
+            <h1>👑 StarStack VIP</h1>
+            <p>解锁全部编程教程、影视/音乐播放器，每日额外积分加成，商店购物享 9 折优惠</p>
         </section>
 
-        <section class="settings-section">
-            <h2>🚀 快速开始</h2>
+        {% if is_vip %}
+        <div class="vip-hero">
+            <span class="badge badge-vip tier-{{ vip_tier|lower }}">👑 {{ vip_tier }}</span>
+            您当前是 <strong>{{ vip_tier }}</strong> 会员，还剩 <strong>{{ vip_days_left }} 天</strong>（到期: {{ vip_expires_at_str }}）
+        </div>
+        {% endif %}
+
+        <h2>📦 套餐选择</h2>
+        <div class="item-grid">
+            {% for key, pkg in packages.items() %}
+            <div class="item-card vip-card tier-{{ pkg.tier|lower }}">
+                <h3>{{ pkg.label }}</h3>
+                <p class="item-desc">
+                    等级 <strong>{{ pkg.tier }}</strong> · {{ pkg.duration_days }} 天有效
+                </p>
+                <p class="item-effect">💰 每日 +{{ pkg.daily_bonus }} 积分</p>
+                <ul class="vip-perks">
+                    <li>📚 全教程解锁</li>
+                    <li>🎬 影视 + 🎵 音乐免费</li>
+                    <li>🏷️ 商店 9 折</li>
+                    <li>🎮 MC 专属服务器</li>
+                </ul>
+                <div class="item-footer">
+                    <span class="item-price">¥{{ pkg.price_cny }}</span>
+                    {% if username %}
+                    <button class="btn btn-vip vip-buy-btn" data-package-key="{{ key }}">立即开通</button>
+                    {% else %}
+                    <a class="btn btn-vip" href="{{ url_for('login', next='/vip') }}">登录后开通</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <section class="settings-section" style="margin-top:2rem;">
+            <h2>🎁 VIP 特权一览</h2>
             <ul class="vip-perks" style="font-size:1rem;">
-                <li>💬 <a href="{{ url_for('message_board') }}">留言板</a> — 发表想法，浏览其他用户的留言</li>
-                <li>🛒 <a href="{{ url_for('store') }}">商店</a> — 用积分兑换教程、游戏、影视中心、VIP 会员</li>
-                <li>🎒 <a href="{{ url_for('inventory') }}">背包</a> — 查看已购商品和使用效果</li>
-                <li>📋 <a href="{{ url_for('tasks_page') }}">任务</a> — 完成每日 / 固定任务赚积分</li>
-                <li>👑 <a href="{{ url_for('vip_page') }}">VIP 会员</a> — 解锁全部教程 + 影视音乐 + 9 折优惠</li>
+                <li>📚 <strong>教程全解锁</strong> — Python / C++ / Node.js / 前端 / Python后端 / 编程秘籍 共 6 套，VIP 期间免购买直接观看</li>
+                <li>🎬 <strong>影视 + 音乐免费</strong> — 影视中心和音乐播放器无需购买（原价 799 + 2999 积分）</li>
+                <li>💰 <strong>每日积分加成</strong> — VIP +10 / SVIP +50 / SSVIP +100 积分每天自动到账</li>
+                <li>🏷️ <strong>商店 9 折</strong> — 所有商品（教程、游戏、实物）自动 10% 折扣</li>
+                <li>🎮 <strong>Minecraft 专属服务器</strong> — VIP 期间可登录专属 MC 服务器（1.20.4）</li>
+                <li>👑 <strong>金色 VIP 徽章</strong> — 全站导航栏显示专属身份标识</li>
             </ul>
         </section>
     </main>
 
-    <!-- 流星雨背景：仅在赛博T恤激活时显示 -->
-    <div class="meteor-shower" aria-hidden="true">
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-    </div>
-
-    <canvas id="mouseTrailCanvas" class="mouse-trail-canvas {% if not mouse_effect_enabled %}hidden{% endif %}"></canvas>
-
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/store.js') }}"></script>
 </body>
 </html>

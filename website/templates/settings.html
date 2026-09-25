@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>设置 - 留言板</title>
+    <title>设置 - StarStack</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{% if has_cyber_tshirt %}cyber-tshirt{% endif %}">
     <nav class="navbar">
-        <div class="nav-brand">📋 留言板</div>
+        <div class="nav-brand">⭐ StarStack</div>
         <ul class="nav-links">
             <li><a href="{{ url_for('home') }}">首页</a></li>
             <li><a href="{{ url_for('message_board') }}">留言板</a></li>
-            <li><a href="{{ url_for('store') }}">商店</a></li>
-            <li><a href="{{ url_for('inventory') }}">背包</a></li>
-            <li><a href="{{ url_for('tasks_page') }}">任务</a></li>
             {% if username and '游戏手柄' in unlocked_content %}
             <li><a href="{{ url_for('game_center') }}">游戏</a></li>
             {% endif %}
@@ -24,10 +21,44 @@
         </ul>
         <div class="nav-user">
             {% if has_clock %}<span class="nav-clock" id="navClock">--:--:--</span>{% endif %}
-            <span class="nav-username">{{ username }}</span>
-            <span class="nav-points">💰 {{ points }}</span>
-            <a href="{{ url_for('settings') }}" class="btn btn-sm active">设置</a>
-            <a href="{{ url_for('logout') }}" class="btn btn-sm btn-ghost">退出</a>
+            {% if username %}
+                {% if user_points is defined and user_points is not none %}<span class="nav-points">💰 {{ user_points }}</span>{% endif %}
+                {% if points is defined and points is not none and (user_points is not defined or user_points is none) %}<span class="nav-points">💰 {{ points }}</span>{% endif %}
+                {% if is_vip %}<span class="badge badge-vip tier-{{ vip_tier|lower }}">👑 {{ vip_tier }} · {{ vip_days_left }}天</span>{% endif %}
+                {% set _avatar_url = avatar if (avatar is defined and avatar) else '' %}
+                <div class="nav-user-dropdown">
+                    <button class="nav-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+                        {% if _avatar_url and not _avatar_url.startswith('default:') %}
+                            <img class="nav-avatar" src="{{ _avatar_url }}" alt="avatar">
+                        {% else %}
+                            <img class="nav-avatar" src="{{ url_for('static', filename='avatars/default.svg') }}" alt="avatar">
+                        {% endif %}
+                        <span class="nav-username">{{ username }}</span>
+                        <span class="nav-caret">▾</span>
+                    </button>
+                    <div class="nav-user-menu" role="menu">
+                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item" role="menuitem">💰 充值</a>
+                        <a href="{{ url_for('store') }}" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
+                        <a href="{{ url_for('inventory') }}" class="nav-user-menu-item" role="menuitem">🎒 背包</a>
+                        <a href="{{ url_for('tasks_page') }}" class="nav-user-menu-item" role="menuitem">📋 任务</a>
+                        <a href="{{ url_for('settings') }}" class="nav-user-menu-item" role="menuitem">⚙️ 设置</a>
+                        <a href="{{ url_for('logout') }}" class="nav-user-menu-item nav-user-menu-item-danger" role="menuitem">🚪 退出</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="nav-user-dropdown">
+                    <button class="nav-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="nav-account-icon">👤</span>
+                        <span class="nav-caret">▾</span>
+                    </button>
+                    <div class="nav-user-menu" role="menu">
+                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item" role="menuitem">💰 充值</a>
+                        <a href="{{ url_for('store') }}" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
+                        <a href="{{ url_for('login') }}" class="nav-user-menu-item" role="menuitem">🔐 登录</a>
+                        <a href="{{ url_for('register') }}" class="nav-user-menu-item" role="menuitem">📝 注册</a>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </nav>
 
@@ -44,6 +75,72 @@
 
         <h1>⚙️ 设置</h1>
 
+    <section class="settings-section vip-section">
+        <h2>👑 VIP 状态</h2>
+        {% if is_vip %}
+            <p>当前等级: <span class="badge badge-vip tier-{{ vip_tier|lower }}">{{ vip_tier }}</span></p>
+            <p>到期时间: <code>{{ vip_expires_at_str }}</code></p>
+            <p>剩余天数: <strong>{{ vip_days_left }} 天</strong></p>
+            <p>购买次数: {{ user.vip_purchase_history|length if user.vip_purchase_history else 0 }} 次</p>
+
+            <div class="mc-server-card">
+                <h3>🎮 Minecraft 服务器（VIP 专属）</h3>
+                <p class="muted">{{ MC_SERVER_CONFIG.motd }}</p>
+                <dl class="mc-server-info">
+                    <dt>服务器地址</dt>
+                    <dd>
+                        <code id="mcServerHost">{{ MC_SERVER_CONFIG.host }}</code>:<code id="mcServerPort">{{ MC_SERVER_CONFIG.port }}</code>
+                        <button type="button" class="btn btn-sm" id="copyMcServerBtn">📋 复制</button>
+                    </dd>
+                    <dt>游戏版本</dt>
+                    <dd>{{ MC_SERVER_CONFIG.version }}</dd>
+                </dl>
+            </div>
+
+            <a class="btn btn-vip" href="{{ url_for('vip_page') }}">续费 / 升级</a>
+        {% else %}
+            <p class="muted">您还未开通 VIP</p>
+            <ul class="vip-perks">
+                <li>📚 全部 6 套编程教程直接观看（免购买）</li>
+                <li>🎬 影视中心 + 🎵 音乐播放器免费用</li>
+                <li>💰 每日 +{{ VIP_TIERS.VIP.daily_bonus }} 积分（SVIP: +{{ VIP_TIERS.SVIP.daily_bonus }}，SSVIP: +{{ VIP_TIERS.SSVIP.daily_bonus }}）</li>
+                <li>🏷️ 商店购物全场 9 折</li>
+                <li>🎮 Minecraft 服务器 VIP 通道</li>
+            </ul>
+            <a class="btn btn-vip" href="{{ url_for('vip_page') }}">立即开通</a>
+        {% endif %}
+    </section>
+
+    <section class="settings-section">
+        <h2>💰 积分充值记录</h2>
+        {% if user.recharge_history and user.recharge_history|length > 0 %}
+            <table class="recharge-history-table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>套餐</th>
+                        <th>金额</th>
+                        <th>积分</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for r in user.recharge_history[-5:]|reverse %}
+                    <tr>
+                        <td><code>{{ r.paid_at }}</code></td>
+                        <td>{{ r.pkg_key }}</td>
+                        <td>¥{{ r.price_cny }}</td>
+                        <td>💰 {{ r.points }}{% if r.bonus %} <span class="badge badge-vip">+{{ r.bonus }}</span>{% endif %}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <a class="btn btn-primary" href="{{ url_for('recharge') }}">再次充值</a>
+        {% else %}
+            <p class="muted">还没有充值记录</p>
+            <a class="btn btn-primary" href="{{ url_for('recharge') }}">💰 立即充值</a>
+        {% endif %}
+    </section>
+
         <section class="settings-section">
             <h2>当前头像</h2>
             <div class="avatar-preview" id="avatarPreview"></div>
@@ -51,24 +148,15 @@
         </section>
 
         <section class="settings-section">
-            <h2>选择默认颜色</h2>
-            <div class="color-picker">
-                <button type="button" class="color-dot" data-color="#3498db" style="background:#3498db"></button>
-                <button type="button" class="color-dot" data-color="#e74c3c" style="background:#e74c3c"></button>
-                <button type="button" class="color-dot" data-color="#2ecc71" style="background:#2ecc71"></button>
-                <button type="button" class="color-dot" data-color="#9b59b6" style="background:#9b59b6"></button>
-                <button type="button" class="color-dot" data-color="#f39c12" style="background:#f39c12"></button>
-                <button type="button" class="color-dot" data-color="#1abc9c" style="background:#1abc9c"></button>
-                <button type="button" class="color-dot" data-color="#e91e63" style="background:#e91e63"></button>
-                <button type="button" class="color-dot" data-color="#34495e" style="background:#34495e"></button>
-            </div>
-        </section>
-
-        <section class="settings-section">
             <h2>上传自定义头像</h2>
             <form id="avatarUploadForm" enctype="multipart/form-data">
                 <input type="file" name="avatar_file" accept="image/*" required>
                 <button type="submit" class="btn btn-primary">上传</button>
+            </form>
+            <p class="muted" style="margin-top:.6rem;">不想用自定义头像？</p>
+            <form id="avatarResetForm" style="display:inline;">
+                <input type="hidden" name="action" value="reset">
+                <button type="submit" class="btn btn-ghost">↺ 恢复默认头像</button>
             </form>
         </section>
 

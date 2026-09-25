@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>留言板 - 首页</title>
+    <title>StarStack - 首页</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{% if has_cyber_tshirt %}cyber-tshirt{% endif %}">
     <nav class="navbar">
-        <div class="nav-brand">📋 留言板</div>
+        <div class="nav-brand">⭐ StarStack</div>
         <ul class="nav-links">
             <li><a href="{{ url_for('home') }}" class="active">首页</a></li>
             <li><a href="{{ url_for('message_board') }}">留言板</a></li>
-            <li><a href="{{ url_for('store') }}">商店</a></li>
-            <li><a href="{{ url_for('inventory') }}">背包</a></li>
-            <li><a href="{{ url_for('tasks_page') }}">任务</a></li>
             {% if username and '游戏手柄' in unlocked_content %}
             <li><a href="{{ url_for('game_center') }}">游戏</a></li>
             {% endif %}
@@ -25,18 +22,42 @@
         <div class="nav-user">
             {% if has_clock %}<span class="nav-clock" id="navClock">--:--:--</span>{% endif %}
             {% if username %}
-                {% set avatar_url = avatar %}
-                {% if avatar and avatar.startswith('default:') %}
-                    {% set avatar_url = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><circle cx=%2220%22 cy=%2220%22 r=%2220%22 fill=%22' ~ avatar.split(':')[1] ~ '%22/></svg>' %}
-                {% endif %}
-                <img class="nav-avatar" src="{{ avatar_url }}" alt="avatar">
-                <span class="nav-username">{{ username }}</span>
-                {% if user_points is not none %}<span class="nav-points">💰 {{ user_points }}</span>{% endif %}
-                <a href="{{ url_for('settings') }}" class="btn btn-sm">设置</a>
-                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-ghost">退出</a>
+                {% if user_points is defined and user_points is not none %}<span class="nav-points">💰 {{ user_points }}</span>{% endif %}
+                {% if points is defined and points is not none and (user_points is not defined or user_points is none) %}<span class="nav-points">💰 {{ points }}</span>{% endif %}
+                {% if is_vip %}<span class="badge badge-vip tier-{{ vip_tier|lower }}">👑 {{ vip_tier }} · {{ vip_days_left }}天</span>{% endif %}
+                {% set _avatar_url = avatar if (avatar is defined and avatar) else '' %}
+                <div class="nav-user-dropdown">
+                    <button class="nav-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+                        {% if _avatar_url and not _avatar_url.startswith('default:') %}
+                            <img class="nav-avatar" src="{{ _avatar_url }}" alt="avatar">
+                        {% else %}
+                            <img class="nav-avatar" src="{{ url_for('static', filename='avatars/default.svg') }}" alt="avatar">
+                        {% endif %}
+                        <span class="nav-username">{{ username }}</span>
+                        <span class="nav-caret">▾</span>
+                    </button>
+                    <div class="nav-user-menu" role="menu">
+                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item" role="menuitem">💰 充值</a>
+                        <a href="{{ url_for('store') }}" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
+                        <a href="{{ url_for('inventory') }}" class="nav-user-menu-item" role="menuitem">🎒 背包</a>
+                        <a href="{{ url_for('tasks_page') }}" class="nav-user-menu-item" role="menuitem">📋 任务</a>
+                        <a href="{{ url_for('settings') }}" class="nav-user-menu-item" role="menuitem">⚙️ 设置</a>
+                        <a href="{{ url_for('logout') }}" class="nav-user-menu-item nav-user-menu-item-danger" role="menuitem">🚪 退出</a>
+                    </div>
+                </div>
             {% else %}
-                <a href="{{ url_for('login') }}" class="btn btn-sm">登录</a>
-                <a href="{{ url_for('register') }}" class="btn btn-sm btn-primary">注册</a>
+                <div class="nav-user-dropdown">
+                    <button class="nav-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="nav-account-icon">👤</span>
+                        <span class="nav-caret">▾</span>
+                    </button>
+                    <div class="nav-user-menu" role="menu">
+                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item" role="menuitem">💰 充值</a>
+                        <a href="{{ url_for('store') }}" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
+                        <a href="{{ url_for('login') }}" class="nav-user-menu-item" role="menuitem">🔐 登录</a>
+                        <a href="{{ url_for('register') }}" class="nav-user-menu-item" role="menuitem">📝 注册</a>
+                    </div>
+                </div>
             {% endif %}
         </div>
     </nav>
@@ -53,38 +74,39 @@
         {% endwith %}
 
         <section class="hero">
-            <h1>欢迎来到留言板</h1>
-            <p>在这里留下你的想法，赚取积分，解锁更多功能 🎮</p>
-        </section>
-
-        <section class="post-card">
-            <h2>✍️ 发布新留言</h2>
-            {% if username %}
-            <form action="{{ url_for('post') }}" method="post" class="post-form">
-                <textarea name="message" rows="4" placeholder="说点什么吧..." required></textarea>
-                <button type="submit" class="btn btn-primary">发布</button>
-            </form>
-            {% else %}
-            <p class="muted">请<a href="{{ url_for('login', next='/post') }}">登录</a>后发布留言</p>
+            <h1>欢迎来到星栈</h1>
+            <p>StarStack一切从这里开始 ✨</p>
+            {% if not username %}
+            <p style="margin-top:1rem;">
+                <a class="btn btn-primary" href="{{ url_for('login') }}">登录</a>
+                <a class="btn btn-vip" href="{{ url_for('register') }}">注册新账号</a>
+            </p>
             {% endif %}
         </section>
 
-        <section class="messages-card">
-            <h2>💬 最新留言</h2>
-            {% if messages %}
-                <ul class="message-list">
-                {% for msg in messages|reverse %}
-                    <li class="message-item">
-                        <div class="message-author">{{ msg.name }}</div>
-                        <div class="message-content">{{ msg.msg }}</div>
-                    </li>
-                {% endfor %}
-                </ul>
-            {% else %}
-                <p class="muted">还没有留言，快来抢沙发吧～</p>
-            {% endif %}
+        <section class="settings-section">
+            <h2>🚀 快速开始</h2>
+            <ul class="vip-perks" style="font-size:1rem;">
+                <li>💬 <a href="{{ url_for('message_board') }}">留言板</a> — 发表想法，浏览其他用户的留言</li>
+                <li>🛒 <a href="{{ url_for('store') }}">商店</a> — 用积分兑换教程、游戏、影视中心、VIP 会员</li>
+                <li>🎒 <a href="{{ url_for('inventory') }}">背包</a> — 查看已购商品和使用效果</li>
+                <li>📋 <a href="{{ url_for('tasks_page') }}">任务</a> — 完成每日 / 固定任务赚积分</li>
+                <li>👑 <a href="{{ url_for('vip_page') }}">VIP 会员</a> — 解锁全部教程 + 影视音乐 + 9 折优惠</li>
+            </ul>
         </section>
     </main>
+
+    <!-- 流星雨背景：仅在赛博T恤激活时显示 -->
+    <div class="meteor-shower" aria-hidden="true">
+        <i class="meteor"></i>
+        <i class="meteor"></i>
+        <i class="meteor"></i>
+        <i class="meteor"></i>
+        <i class="meteor"></i>
+        <i class="meteor"></i>
+        <i class="meteor"></i>
+        <i class="meteor"></i>
+    </div>
 
     <canvas id="mouseTrailCanvas" class="mouse-trail-canvas {% if not mouse_effect_enabled %}hidden{% endif %}"></canvas>
 

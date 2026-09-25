@@ -10,19 +10,52 @@
 </head>
 <body class="game-page {% if has_cyber_tshirt %}cyber-tshirt{% endif %}">
     <nav class="navbar">
-        <div class="nav-brand">📋 留言板</div>
+        <div class="nav-brand">⭐ StarStack</div>
         <ul class="nav-links">
             <li><a href="{{ url_for('home') }}">首页</a></li>
             <li><a href="{{ url_for('message_board') }}">留言板</a></li>
-            <li><a href="{{ url_for('store') }}">商店</a></li>
-            <li><a href="{{ url_for('inventory') }}">背包</a></li>
-            <li><a href="{{ url_for('tasks_page') }}">任务</a></li>
             <li><a href="{{ url_for('game_center') }}" class="active">游戏</a></li>
         </ul>
         <div class="nav-user">
             {% if has_clock %}<span class="nav-clock" id="navClock">--:--:--</span>{% endif %}
-            <span class="nav-username">{{ username }}</span>
-            <a href="{{ url_for('logout') }}" class="btn btn-sm btn-ghost">退出</a>
+            {% if username %}
+                {% if user_points is defined and user_points is not none %}<span class="nav-points">💰 {{ user_points }}</span>{% endif %}
+                {% if points is defined and points is not none and (user_points is not defined or user_points is none) %}<span class="nav-points">💰 {{ points }}</span>{% endif %}
+                {% if is_vip %}<span class="badge badge-vip tier-{{ vip_tier|lower }}">👑 {{ vip_tier }} · {{ vip_days_left }}天</span>{% endif %}
+                {% set _avatar_url = avatar if (avatar is defined and avatar) else '' %}
+                <div class="nav-user-dropdown">
+                    <button class="nav-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+                        {% if _avatar_url and not _avatar_url.startswith('default:') %}
+                            <img class="nav-avatar" src="{{ _avatar_url }}" alt="avatar">
+                        {% else %}
+                            <img class="nav-avatar" src="{{ url_for('static', filename='avatars/default.svg') }}" alt="avatar">
+                        {% endif %}
+                        <span class="nav-username">{{ username }}</span>
+                        <span class="nav-caret">▾</span>
+                    </button>
+                    <div class="nav-user-menu" role="menu">
+                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item" role="menuitem">💰 充值</a>
+                        <a href="{{ url_for('store') }}" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
+                        <a href="{{ url_for('inventory') }}" class="nav-user-menu-item" role="menuitem">🎒 背包</a>
+                        <a href="{{ url_for('tasks_page') }}" class="nav-user-menu-item" role="menuitem">📋 任务</a>
+                        <a href="{{ url_for('settings') }}" class="nav-user-menu-item" role="menuitem">⚙️ 设置</a>
+                        <a href="{{ url_for('logout') }}" class="nav-user-menu-item nav-user-menu-item-danger" role="menuitem">🚪 退出</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="nav-user-dropdown">
+                    <button class="nav-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="nav-account-icon">👤</span>
+                        <span class="nav-caret">▾</span>
+                    </button>
+                    <div class="nav-user-menu" role="menu">
+                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item" role="menuitem">💰 充值</a>
+                        <a href="{{ url_for('store') }}" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
+                        <a href="{{ url_for('login') }}" class="nav-user-menu-item" role="menuitem">🔐 登录</a>
+                        <a href="{{ url_for('register') }}" class="nav-user-menu-item" role="menuitem">📝 注册</a>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </nav>
 

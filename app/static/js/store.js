@@ -59,3 +59,34 @@
         return area;
     }
 })();
+
+
+    // VIP 套餐购买按钮：跳转到 /buy_vip -> /vip_pay/<id>
+    document.querySelectorAll('.vip-buy-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const pkgKey = btn.dataset.packageKey;
+            if (!pkgKey) return;
+            btn.disabled = true;
+            const oldText = btn.textContent;
+            btn.textContent = '下单中...';
+            try {
+                const r = await fetch('/buy_vip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ package_key: pkgKey }),
+                });
+                const data = await r.json();
+                if (data.success && data.redirect) {
+                    location.href = data.redirect;
+                } else {
+                    showFlash('error', data.msg || '下单失败');
+                    btn.disabled = false;
+                    btn.textContent = oldText;
+                }
+            } catch (err) {
+                showFlash('error', '网络错误：' + err.message);
+                btn.disabled = false;
+                btn.textContent = oldText;
+            }
+        });
+    });

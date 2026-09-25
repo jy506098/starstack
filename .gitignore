@@ -48,3 +48,9 @@ node_modules/
 build/
 dist/
 *.spec.bak
+
+# Unrelated tooling present in the project root
+mc/
+spark/
+图标.ico
+图标.png

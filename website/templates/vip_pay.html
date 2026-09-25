@@ -3,21 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarStack - 首页</title>
+    <title>微信支付 - StarStack VIP</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{% if has_cyber_tshirt %}cyber-tshirt{% endif %}">
     <nav class="navbar">
         <div class="nav-brand">⭐ StarStack</div>
         <ul class="nav-links">
-            <li><a href="{{ url_for('home') }}" class="active">首页</a></li>
-            <li><a href="{{ url_for('message_board') }}">留言板</a></li>
-            {% if username and '游戏手柄' in unlocked_content %}
-            <li><a href="{{ url_for('game_center') }}">游戏</a></li>
-            {% endif %}
-            {% if username and '影视播放器' in unlocked_content %}
-            <li><a href="{{ url_for('video_player') }}">影视</a></li>
-            {% endif %}
+            <li><a href="{{ url_for('home') }}">首页</a></li>
+            <li><a href="{{ url_for('vip_page') }}">VIP</a></li>
         </ul>
         <div class="nav-user">
             {% if has_clock %}<span class="nav-clock" id="navClock">--:--:--</span>{% endif %}
@@ -37,7 +31,6 @@
                         <span class="nav-caret">▾</span>
                     </button>
                     <div class="nav-user-menu" role="menu">
-                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item" role="menuitem">💰 充值</a>
                         <a href="{{ url_for('store') }}" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
                         <a href="{{ url_for('inventory') }}" class="nav-user-menu-item" role="menuitem">🎒 背包</a>
                         <a href="{{ url_for('tasks_page') }}" class="nav-user-menu-item" role="menuitem">📋 任务</a>
@@ -52,7 +45,6 @@
                         <span class="nav-caret">▾</span>
                     </button>
                     <div class="nav-user-menu" role="menu">
-                        <a href="{{ url_for('recharge') }}" class="nav-user-menu-item" role="menuitem">💰 充值</a>
                         <a href="{{ url_for('store') }}" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
                         <a href="{{ url_for('login') }}" class="nav-user-menu-item" role="menuitem">🔐 登录</a>
                         <a href="{{ url_for('register') }}" class="nav-user-menu-item" role="menuitem">📝 注册</a>
@@ -63,53 +55,43 @@
     </nav>
 
     <main class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-area">
-            {% for category, msg in messages %}
-            <div class="flash flash-{{ category }}">{{ msg }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endwith %}
+        <section class="settings-section" style="max-width:720px;margin:2rem auto;">
+            <h2 style="text-align:center;">📱 微信支付</h2>
+            <p class="muted" style="text-align:center;">订单号: <code>{{ order.order_id }}</code></p>
 
-        <section class="hero">
-            <h1>欢迎来到星栈</h1>
-            <p>StarStack一切从这里开始 ✨</p>
-            {% if not username %}
-            <p style="margin-top:1rem;">
-                <a class="btn btn-primary" href="{{ url_for('login') }}">登录</a>
-                <a class="btn btn-vip" href="{{ url_for('register') }}">注册新账号</a>
+            <div class="vip-pay-panel">
+                <div class="vip-pay-info">
+                    <dl>
+                        <dt>套餐</dt>
+                        <dd>{{ pkg.label }}</dd>
+                        <dt>会员等级</dt>
+                        <dd><span class="badge badge-vip tier-{{ pkg.tier|lower }}">{{ pkg.tier }}</span></dd>
+                        <dt>有效期</dt>
+                        <dd>{{ pkg.duration_days }} 天</dd>
+                        <dt>每日加成</dt>
+                        <dd>💰 +{{ pkg.daily_bonus }} 积分</dd>
+                        <dt>应付金额</dt>
+                        <dd class="price">¥{{ order.price_cny }}</dd>
+                    </dl>
+                </div>
+                <div style="text-align:center;">
+                    <div class="wechat-qr">
+                        <span>微信扫码<br>¥{{ order.price_cny }}</span>
+                    </div>
+                    <p class="muted">请使用微信扫描上方二维码完成支付</p>
+                    <p>倒计时: <strong id="countdown">5</strong> 秒</p>
+                    <button id="confirmPayBtn" class="btn btn-vip" data-order-id="{{ order.order_id }}">
+                        等待支付确认 (5s)
+                    </button>
+                </div>
+            </div>
+
+            <p class="muted" style="text-align:center;margin-top:1.5rem;">
+                ⚠️ 这是模拟支付界面。点击 "我已支付" 后将立即开通 VIP，无需真实付款。
             </p>
-            {% endif %}
-        </section>
-
-        <section class="settings-section">
-            <h2>🚀 快速开始</h2>
-            <ul class="vip-perks" style="font-size:1rem;">
-                <li>💬 <a href="{{ url_for('message_board') }}">留言板</a> — 发表想法，浏览其他用户的留言</li>
-                <li>🛒 <a href="{{ url_for('store') }}">商店</a> — 用积分兑换教程、游戏、影视中心、VIP 会员</li>
-                <li>🎒 <a href="{{ url_for('inventory') }}">背包</a> — 查看已购商品和使用效果</li>
-                <li>📋 <a href="{{ url_for('tasks_page') }}">任务</a> — 完成每日 / 固定任务赚积分</li>
-                <li>👑 <a href="{{ url_for('vip_page') }}">VIP 会员</a> — 解锁全部教程 + 影视音乐 + 9 折优惠</li>
-            </ul>
         </section>
     </main>
 
-    <!-- 流星雨背景：仅在赛博T恤激活时显示 -->
-    <div class="meteor-shower" aria-hidden="true">
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-        <i class="meteor"></i>
-    </div>
-
-    <canvas id="mouseTrailCanvas" class="mouse-trail-canvas {% if not mouse_effect_enabled %}hidden{% endif %}"></canvas>
-
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vip.js') }}"></script>
 </body>
 </html>

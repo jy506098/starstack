@@ -23,7 +23,8 @@ import os
 import sys
 import logging
 import hashlib
-from datetime import datetime
+import uuid
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # 请修改为随机字符串
@@ -122,11 +123,26 @@ for username, user_data in users.items():
             "color_mode": "rainbow",
             "shape": "circle"
         }
+    if 'vip_tier' not in user_data:
+        user_data['vip_tier'] = ''
+    if 'vip_expires_at' not in user_data:
+        user_data['vip_expires_at'] = ''
+    if 'last_vip_bonus_date' not in user_data:
+        user_data['last_vip_bonus_date'] = ''
+    if 'vip_purchase_history' not in user_data:
+        user_data['vip_purchase_history'] = []
+    if 'vip_pending_order_id' not in user_data:
+        user_data['vip_pending_order_id'] = ''
+    if 'recharge_history' not in user_data:
+        user_data['recharge_history'] = []
     if 'avatar' not in user_data:
-        user_data['avatar'] = "default:#3498db"
+        user_data['avatar'] = "default:none"
 save_users(users)
 
 sms_codes = {}
+
+# ---------- VIP 订单（进程内字典，mock 支付无需持久化） ----------
+pending_orders = {}  # order_id -> {order_id, username, tier, duration_days, price_cny, created_at, paid_at}
 
 def is_valid_phone(phone):
     return bool(re.match(r'^1[3-9]\d{9}$', phone))
@@ -134,12 +150,26 @@ def is_valid_phone(phone):
 # ---------- 全局模板变量 ----------
 @app.context_processor
 def inject_common_vars():
-    """为所有模板注入常用变量（如 has_cyber_tshirt）"""
+    """为所有模板注入常用变量（含 VIP 状态）"""
     username = session.get('username')
     has_cyber_tshirt = False
+    is_vip = False
+    vip_tier = ''
+    vip_days_left = 0
+    vip_expires_at_str = ''
     if username and username in users:
-        has_cyber_tshirt = users[username].get('effects', {}).get('cyber_tshirt', False)
-    return dict(has_cyber_tshirt=has_cyber_tshirt)
+        u = users[username]
+        has_cyber_tshirt = u.get('effects', {}).get('cyber_tshirt', False)
+        is_vip, vip_tier, _exp, vip_days_left = is_user_vip(u)
+        vip_expires_at_str = u.get('vip_expires_at', '')
+    return dict(
+        has_cyber_tshirt=has_cyber_tshirt,
+        is_vip=is_vip,
+        vip_tier=vip_tier,
+        vip_days_left=vip_days_left,
+        vip_expires_at_str=vip_expires_at_str,
+        VIP_TIERS=VIP_TIERS,
+    )
 
 # ---------- 固定任务 ----------
 FIXED_TASKS = [
@@ -229,6 +259,103 @@ def grant_admin_daily_points(username):
         user['admin_daily_points_count'] = count + 1
         save_users(users)
         print(f"[管理员] {username} 获得每日 10000 积分奖励 (第{count+1}次)")
+
+# ---------- VIP 系统 ----------
+VIP_TIERS = {
+    "VIP":   {"daily_bonus": 10,  "label": "VIP"},
+    "SVIP":  {"daily_bonus": 50,  "label": "SVIP"},
+    "SSVIP": {"daily_bonus": 100, "label": "SSVIP"},
+}
+VIP_DURATION_MULTIPLIER  = {30: 1.0, 90: 2.5, 365: 8.0}
+VIP_BASE_MONTHLY_PRICE   = {"VIP": 50, "SVIP": 100, "SSVIP": 800}
+
+VIP_PACKAGES = {}
+for _tier, _base in VIP_BASE_MONTHLY_PRICE.items():
+    for _days, _mult in VIP_DURATION_MULTIPLIER.items():
+        _key = f"{_tier}-{_days}"
+        VIP_PACKAGES[_key] = {
+            "tier": _tier,
+            "duration_days": _days,
+            "price_cny": int(_base * _mult),
+            "daily_bonus": VIP_TIERS[_tier]["daily_bonus"],
+            "label": f"{_tier} · {_days} 天",
+        }
+
+VIP_TUTORIAL_WHITELIST = {
+    "编程秘籍", "C++ 入门", "node.js 入门",
+    "前端三剑客 入门", "Python 入门", "Python后端 入门",
+}
+VIP_MEDIA_WHITELIST = {"音乐播放器", "影视播放器"}
+
+# ---------- MC 服务器（VIP 特权）----------
+MC_SERVER_CONFIG = {
+    "host":    "starstack.example.com",
+    "port":    25565,
+    "version": "1.20.4",
+    "motd":    "⭐ StarStack VIP 专属服务器",
+}
+
+# ---------- 积分充值套餐 ----------
+RECHARGE_PACKAGES = {
+    "RECHARGE-100":  {"label": "入门充值",  "price_cny": 10,  "points": 100,  "bonus_points": 0},
+    "RECHARGE-500":  {"label": "标准充值",  "price_cny": 50,  "points": 600,  "bonus_points": 100},
+    "RECHARGE-1000": {"label": "高级充值",  "price_cny": 100, "points": 1500, "bonus_points": 300},
+    "RECHARGE-2000": {"label": "豪华充值",  "price_cny": 200, "points": 3500, "bonus_points": 800},
+}
+
+def is_user_vip(user):
+    """返回 (is_vip, tier, expires_at_datetime, days_left)。
+    - tier 为 "" 表示非会员
+    - days_left 在已过期时为 0
+    - 字段缺失/格式错时安全降级为 (False, '', None, 0)
+    """
+    tier = user.get('vip_tier', '')
+    exp  = user.get('vip_expires_at', '')
+    if not tier or not exp:
+        return False, '', None, 0
+    try:
+        expires_at = datetime.strptime(exp, '%Y-%m-%d %H:%M:%S')
+    except (ValueError, TypeError):
+        return False, '', None, 0
+    now = datetime.now()
+    if expires_at <= now:
+        return False, tier, expires_at, 0
+    return True, tier, expires_at, max((expires_at - now).days + 1, 1)
+
+def grant_vip_daily_bonus(username):
+    """VIP 每日积分加成。每天首次访问时调用。
+    与 grant_admin_daily_points 独立计数，可叠加。
+    """
+    if username not in users:
+        return
+    user = users[username]
+    is_vip, tier, _exp, days_left = is_user_vip(user)
+    if not is_vip:
+        return
+    today = datetime.now().strftime('%Y-%m-%d')
+    if user.get('last_vip_bonus_date') == today:
+        return
+    bonus = VIP_TIERS.get(tier, {}).get('daily_bonus', 0)
+    if bonus <= 0:
+        return
+    user['points'] = user.get('points', 0) + bonus
+    user['last_vip_bonus_date'] = today
+    save_users(users)
+    print(f"[VIP] {username} ({tier}) 获得每日 {bonus} 积分奖励 (剩余 {days_left} 天)")
+
+def cleanup_expired_orders():
+    """清理 pending_orders 中超过 15 分钟未支付的订单。"""
+    now = datetime.now()
+    for k in list(pending_orders.keys()):
+        v = pending_orders[k]
+        if v.get('paid_at'):
+            continue
+        try:
+            created = datetime.strptime(v['created_at'], '%Y-%m-%d %H:%M:%S')
+            if (now - created).total_seconds() > 15 * 60:
+                pending_orders.pop(k, None)
+        except (ValueError, KeyError):
+            pending_orders.pop(k, None)
 
 # ---------- 商品数据 ----------
 ITEM_DATA = {
@@ -377,10 +504,11 @@ def home():
     if username and username in users:
         user = users[username]
         grant_admin_daily_points(username)
+        grant_vip_daily_bonus(username)
         user_points = user.get('points', 0)
         unlocked_content = user.get('unlocked_content', [])
         mouse_effect_enabled = user.get('effects', {}).get('mouse_trail', False)
-        avatar = user.get('avatar', 'default:#3498db')
+        avatar = user.get('avatar', 'default:none')
         has_cyber_tshirt = user.get('effects', {}).get('cyber_tshirt', False)
         has_clock = '时钟' in unlocked_content
         today = datetime.now().strftime('%Y-%m-%d')
@@ -410,11 +538,12 @@ def message_board():
     if username and username in users:
         user = users[username]
         grant_admin_daily_points(username)
+        grant_vip_daily_bonus(username)
         user_points = user.get('points', 0)
         unlocked_content = user.get('unlocked_content', [])
         mouse_effect_enabled = user.get('effects', {}).get('mouse_trail', False)
         is_admin = user.get('is_admin', False)
-        avatar = user.get('avatar', 'default:#3498db')
+        avatar = user.get('avatar', 'default:none')
         has_clock = '时钟' in unlocked_content
     return render_template("message_board.html", messages=messages, username=username,
                            user_points=user_points, unlocked_content=unlocked_content,
@@ -434,15 +563,18 @@ def content_page(item_name):
     if not item or not item.get('content_page'):
         return "该商品无内容页", 404
 
-    # 检查是否已解锁
-    if item_name not in user.get('unlocked_content', []):
+    # 检查是否已解锁（VIP 期间白名单内教程也可访问）
+    is_vip, _, _, _ = is_user_vip(user)
+    vip_allowed = is_vip and item_name in VIP_TUTORIAL_WHITELIST
+    if item_name not in user.get('unlocked_content', []) and not vip_allowed:
         flash(f'请先购买并使用「{item_name}」解锁内容', 'error')
         return redirect(url_for('store'))
 
     grant_admin_daily_points(username)
+    grant_vip_daily_bonus(username)
     unlocked_content = user.get('unlocked_content', [])
     mouse_effect_enabled = user.get('effects', {}).get('mouse_trail', False)
-    avatar = user.get('avatar', 'default:#3498db')
+    avatar = user.get('avatar', 'default:none')
     has_clock = '时钟' in unlocked_content
     return render_template(item['content_page'],
                            item_name=item_name,
@@ -478,7 +610,7 @@ def post():
         username = session.get('username')
         user_points = users[username]['points'] if username and username in users else None
         mouse_effect_enabled = users[username].get('effects', {}).get('mouse_trail', False) if username and username in users else False
-        avatar = users[username].get('avatar', 'default:#3498db') if username and username in users else None
+        avatar = users[username].get('avatar', 'default:none') if username and username in users else None
         has_clock = '时钟' in users[username].get('unlocked_content', []) if username and username in users else False
         return render_template("board.html", messages=messages, username=username,
                                user_points=user_points, mouse_effect_enabled=mouse_effect_enabled,
@@ -533,7 +665,13 @@ def register():
                 "color_mode": "rainbow",
                 "shape": "circle"
             },
-            "avatar": "default:#3498db"
+            "avatar": "default:none",
+            "vip_tier": "",
+            "vip_expires_at": "",
+            "last_vip_bonus_date": "",
+            "vip_purchase_history": [],
+            "vip_pending_order_id": "",
+            "recharge_history": [],
         }
         save_users(users)
         flash('注册成功，请登录', 'success')
@@ -549,6 +687,7 @@ def login():
         if username in users and check_password_hash(users[username]['password_hash'], password):
             session['username'] = username
             grant_admin_daily_points(username)
+            grant_vip_daily_bonus(username)
             auto_complete_task(username, 'daily_login')
             return redirect(next_url)
         else:
@@ -571,8 +710,9 @@ def settings():
     if not user:
         return "用户不存在", 404
     grant_admin_daily_points(username)
+    grant_vip_daily_bonus(username)
 
-    avatar = user.get('avatar', 'default:#3498db')
+    avatar = user.get('avatar', 'default:none')
     has_clock = '时钟' in user.get('unlocked_content', [])
 
     if request.method == "POST":
@@ -600,12 +740,14 @@ def settings():
     mouse_effect_enabled = user.get('effects', {}).get('mouse_trail', False)
     return render_template("settings.html",
                            username=username,
+                           user=user,
                            phone=user['phone'],
                            points=user.get('points', 0),
                            avatar=avatar,
                            unlocked_content=unlocked_content,
                            mouse_effect_enabled=mouse_effect_enabled,
-                           has_clock=has_clock)
+                           has_clock=has_clock,
+                           MC_SERVER_CONFIG=MC_SERVER_CONFIG)
 
 @app.route("/settings/avatar", methods=["POST"])
 def update_avatar():
@@ -616,14 +758,11 @@ def update_avatar():
     if not user:
         return jsonify({"success": False, "msg": "用户不存在"}), 404
 
-    if request.is_json:
-        data = request.get_json()
-        color = data.get('default_color')
-        if not color or not color.startswith('#'):
-            return jsonify({"success": False, "msg": "无效颜色"}), 400
-        user['avatar'] = f"default:{color}"
+    # 恢复默认头像
+    if request.form.get('action') == 'reset':
+        user['avatar'] = 'default:none'
         save_users(users)
-        return jsonify({"success": True, "msg": "默认头像已更新"})
+        return jsonify({"success": True, "msg": "已恢复默认头像", "avatar_url": "default:none"})
 
     if 'avatar_file' not in request.files:
         return jsonify({"success": False, "msg": "未选择文件"}), 400
@@ -653,15 +792,20 @@ def store():
     username = session['username']
     user = users[username]
     grant_admin_daily_points(username)
+    grant_vip_daily_bonus(username)
     points = user.get('points', 0)
     unlocked_content = user.get('unlocked_content', [])
     mouse_effect_enabled = user.get('effects', {}).get('mouse_trail', False)
-    avatar = user.get('avatar', 'default:#3498db')
+    avatar = user.get('avatar', 'default:none')
     has_clock = '时钟' in unlocked_content
     return render_template("store.html", username=username, points=points,
                            items=ITEM_DATA, unlocked_content=unlocked_content,
                            mouse_effect_enabled=mouse_effect_enabled, avatar=avatar,
-                           has_clock=has_clock)
+                           has_clock=has_clock,
+                           packages=VIP_PACKAGES, is_vip=is_user_vip(user)[0],
+                           vip_tier=is_user_vip(user)[1],
+                           vip_days_left=is_user_vip(user)[3],
+                           vip_expires_at_str=user.get('vip_expires_at', ''))
 
 @app.route("/buy", methods=["POST"])
 def buy():
@@ -677,6 +821,10 @@ def buy():
     user = users.get(username)
     if not user:
         return jsonify({"success": False, "msg": "用户不存在"}), 404
+
+    # VIP 9 折：服务端权威扣款，前端显示仅供参考
+    if is_user_vip(user)[0]:
+        price = int(price * 0.9)
 
     current_points = user.get('points', 0)
     if current_points < price:
@@ -711,11 +859,12 @@ def inventory():
     if not user:
         return "用户不存在", 404
     grant_admin_daily_points(username)
+    grant_vip_daily_bonus(username)
     inv = user.get('inventory', {})
     inv = {k: v for k, v in inv.items() if v > 0}
     unlocked_content = user.get('unlocked_content', [])
     mouse_effect_enabled = user.get('effects', {}).get('mouse_trail', False)
-    avatar = user.get('avatar', 'default:#3498db')
+    avatar = user.get('avatar', 'default:none')
     has_clock = '时钟' in unlocked_content
     return render_template("inventory.html", username=username, inventory=inv,
                            points=user.get('points', 0), item_data=ITEM_DATA,
@@ -830,6 +979,7 @@ def tasks_page():
     if not user:
         return "用户不存在", 404
     grant_admin_daily_points(username)
+    grant_vip_daily_bonus(username)
 
     fixed_tasks_with_status = []
     for task in FIXED_TASKS:
@@ -852,7 +1002,7 @@ def tasks_page():
 
     unlocked_content = user.get('unlocked_content', [])
     mouse_effect_enabled = user.get('effects', {}).get('mouse_trail', False)
-    avatar = user.get('avatar', 'default:#3498db')
+    avatar = user.get('avatar', 'default:none')
     has_clock = '时钟' in unlocked_content
     return render_template("tasks.html", username=username,
                            fixed_tasks=fixed_tasks_with_status,
@@ -873,10 +1023,11 @@ def game_center():
     if "游戏手柄" not in user.get('unlocked_content', []):
         flash('请先购买并使用游戏手柄解锁游戏中心', 'error')
         return redirect(url_for('store'))
+    grant_vip_daily_bonus(username)
     unlocked_games = [g for g in GAME_LIST if g in user.get('unlocked_content', [])]
     unlocked_content = user.get('unlocked_content', [])
     mouse_effect_enabled = user.get('effects', {}).get('mouse_trail', False)
-    avatar = user.get('avatar', 'default:#3498db')
+    avatar = user.get('avatar', 'default:none')
     has_clock = '时钟' in unlocked_content
     return render_template("game_center.html",
                            username=username,
@@ -902,6 +1053,9 @@ def buy_game():
     user = users.get(username)
     if not user:
         return jsonify({"success": False, "msg": "用户不存在"}), 404
+    # VIP 9 折
+    if is_user_vip(user)[0]:
+        price = int(price * 0.9)
     if user.get('points', 0) < price:
         return jsonify({"success": False, "msg": "积分不足"}), 400
     user['points'] -= price
@@ -974,12 +1128,12 @@ def video_player():
     user = users.get(username)
     if not user:
         return "用户不存在", 404
-    if "影视播放器" not in user.get('unlocked_content', []):
+    if "影视播放器" not in user.get('unlocked_content', []) and not is_user_vip(user)[0]:
         flash('请先购买并使用影视播放器解锁', 'error')
         return redirect(url_for('store'))
     unlocked_content = user.get('unlocked_content', [])
     mouse_effect_enabled = user.get('effects', {}).get('mouse_trail', False)
-    avatar = user.get('avatar', 'default:#3498db')
+    avatar = user.get('avatar', 'default:none')
     has_cyber_tshirt = user.get('effects', {}).get('cyber_tshirt', False)
     has_clock = '时钟' in unlocked_content
     return render_template("video_player.html",
@@ -989,6 +1143,278 @@ def video_player():
                            avatar=avatar,
                            has_cyber_tshirt=has_cyber_tshirt,
                            has_clock=has_clock)
+
+
+# ---------- VIP 路由 ----------
+@app.route("/vip")
+def vip_page():
+    """VIP 套餐展示页（9 卡片 + 当前状态）。"""
+    cleanup_expired_orders()
+    username = session.get('username')
+    is_vip = False
+    vip_tier = ''
+    vip_days_left = 0
+    vip_expires_at_str = ''
+    if username and username in users:
+        u = users[username]
+        is_vip, vip_tier, _exp, vip_days_left = is_user_vip(u)
+        vip_expires_at_str = u.get('vip_expires_at', '')
+    return render_template(
+        "vip.html",
+        username=username,
+        packages=VIP_PACKAGES,
+        is_vip=is_vip,
+        vip_tier=vip_tier,
+        vip_days_left=vip_days_left,
+        vip_expires_at_str=vip_expires_at_str,
+    )
+
+@app.route("/buy_vip", methods=["POST"])
+def buy_vip():
+    """下单：生成 order_id，清掉同用户旧未支付订单（防并发）。"""
+    cleanup_expired_orders()
+    if 'username' not in session:
+        return jsonify({"success": False, "msg": "请先登录"}), 401
+    username = session['username']
+    user = users.get(username)
+    if not user:
+        return jsonify({"success": False, "msg": "用户不存在"}), 404
+    data = request.get_json() or {}
+    pkg_key = data.get('package_key', '')
+    if pkg_key not in VIP_PACKAGES:
+        return jsonify({"success": False, "msg": "无效套餐"}), 400
+    # 清掉该用户所有未支付订单
+    for k, v in list(pending_orders.items()):
+        if v.get('username') == username and not v.get('paid_at'):
+            pending_orders.pop(k, None)
+    pkg = VIP_PACKAGES[pkg_key]
+    order_id = uuid.uuid4().hex[:16]
+    pending_orders[order_id] = {
+        "order_id": order_id,
+        "username": username,
+        "tier": pkg['tier'],
+        "duration_days": pkg['duration_days'],
+        "price_cny": pkg['price_cny'],
+        "created_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        "paid_at": "",
+    }
+    user['vip_pending_order_id'] = order_id
+    save_users(users)
+    return jsonify({
+        "success": True,
+        "order_id": order_id,
+        "redirect": url_for('vip_pay', order_id=order_id),
+    })
+
+@app.route("/vip_pay/<order_id>")
+def vip_pay(order_id):
+    """微信支付模拟页：渲染 vip_pay.html。"""
+    cleanup_expired_orders()
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    username = session['username']
+    order = pending_orders.get(order_id)
+    if not order:
+        return "订单不存在或已过期", 404
+    if order['username'] != username:
+        return "无权访问该订单", 403
+    if order.get('paid_at'):
+        return redirect(url_for('settings'))
+    pkg = VIP_PACKAGES.get(f"{order['tier']}-{order['duration_days']}")
+    return render_template("vip_pay.html", order=order, pkg=pkg)
+
+@app.route("/vip_pay_confirm/<order_id>", methods=["POST"])
+def vip_pay_confirm(order_id):
+    """'我已支付' 回调：开通 VIP，时长叠加，返回 settings 跳转。"""
+    if 'username' not in session:
+        return jsonify({"success": False, "msg": "请先登录"}), 401
+    username = session['username']
+    order = pending_orders.get(order_id)
+    if not order or order.get('username') != username:
+        return jsonify({"success": False, "msg": "订单无效"}), 400
+    if order.get('paid_at'):
+        return jsonify({"success": False, "msg": "订单已支付"}), 400
+    user = users.get(username)
+    if not user:
+        return jsonify({"success": False, "msg": "用户不存在"}), 404
+    now = datetime.now()
+    # 时长叠加：已有未过期 VIP 则从原到期时间起算
+    old_exp_str = user.get('vip_expires_at', '')
+    base = now
+    if old_exp_str:
+        try:
+            old_exp = datetime.strptime(old_exp_str, '%Y-%m-%d %H:%M:%S')
+            if old_exp > now:
+                base = old_exp
+        except ValueError:
+            pass
+    new_exp = base + timedelta(days=order['duration_days'])
+    user['vip_tier'] = order['tier']
+    user['vip_expires_at'] = new_exp.strftime('%Y-%m-%d %H:%M:%S')
+    history = user.get('vip_purchase_history', [])
+    if not isinstance(history, list):
+        history = []
+    history.append({
+        'tier': order['tier'],
+        'duration_days': order['duration_days'],
+        'price_cny': order['price_cny'],
+        'paid_at': now.strftime('%Y-%m-%d %H:%M:%S'),
+        'order_id': order_id,
+    })
+    user['vip_purchase_history'] = history
+    user['vip_pending_order_id'] = ''
+    order['paid_at'] = now.strftime('%Y-%m-%d %H:%M:%S')
+    save_users(users)
+    return jsonify({
+        "success": True,
+        "msg": "VIP 开通成功",
+        "redirect": url_for('settings'),
+    })
+
+
+# =====================================================================
+#  积分充值（微信支付模拟）
+# =====================================================================
+
+@app.route("/recharge")
+def recharge():
+    """积分充值套餐展示页。"""
+    if 'username' not in session:
+        return redirect(url_for('login', next='/recharge'))
+    username = session['username']
+    user = users.get(username, {})
+    return render_template(
+        "recharge.html",
+        packages=RECHARGE_PACKAGES,
+        points=user.get('points', 0),
+    )
+
+@app.route("/buy_recharge", methods=["POST"])
+def buy_recharge():
+    """下单充值：生成 order_id，清掉该用户旧未支付订单。"""
+    cleanup_expired_orders()
+    if 'username' not in session:
+        return jsonify({"success": False, "msg": "请先登录"}), 401
+    username = session['username']
+    user = users.get(username)
+    if not user:
+        return jsonify({"success": False, "msg": "用户不存在"}), 404
+    data = request.get_json() or {}
+    pkg_key = data.get('package_key', '')
+    if pkg_key not in RECHARGE_PACKAGES:
+        return jsonify({"success": False, "msg": "无效充值套餐"}), 400
+    # 清掉该用户所有未支付订单
+    for k, v in list(pending_orders.items()):
+        if v.get('username') == username and not v.get('paid_at') and v.get('kind') == 'recharge':
+            pending_orders.pop(k, None)
+    pkg = RECHARGE_PACKAGES[pkg_key]
+    order_id = uuid.uuid4().hex[:16]
+    pending_orders[order_id] = {
+        "order_id":     order_id,
+        "kind":         "recharge",
+        "username":     username,
+        "pkg_key":      pkg_key,
+        "price_cny":    pkg['price_cny'],
+        "points":       pkg['points'],
+        "bonus_points": pkg['bonus_points'],
+        "created_at":   datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        "paid_at":      "",
+    }
+    save_users(users)
+    return jsonify({
+        "success":  True,
+        "order_id": order_id,
+        "redirect": url_for('recharge_pay', order_id=order_id),
+    })
+
+@app.route("/recharge_pay/<order_id>")
+def recharge_pay(order_id):
+    """微信支付模拟页：渲染 recharge_pay.html。"""
+    cleanup_expired_orders()
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    username = session['username']
+    order = pending_orders.get(order_id)
+    if not order or order.get('kind') != 'recharge':
+        return "订单不存在或已过期", 404
+    if order['username'] != username:
+        return "无权访问该订单", 403
+    if order.get('paid_at'):
+        return redirect(url_for('settings'))
+    pkg = RECHARGE_PACKAGES.get(order['pkg_key'])
+    return render_template("recharge_pay.html", order=order, pkg=pkg)
+
+@app.route("/recharge_pay_confirm/<order_id>", methods=["POST"])
+def recharge_pay_confirm(order_id):
+    """'我已支付' 回调：积分入账 + 写历史。"""
+    if 'username' not in session:
+        return jsonify({"success": False, "msg": "请先登录"}), 401
+    username = session['username']
+    order = pending_orders.get(order_id)
+    if not order or order.get('username') != username or order.get('kind') != 'recharge':
+        return jsonify({"success": False, "msg": "订单无效"}), 400
+    if order.get('paid_at'):
+        return jsonify({"success": False, "msg": "订单已支付"}), 400
+    user = users.get(username)
+    if not user:
+        return jsonify({"success": False, "msg": "用户不存在"}), 404
+    total = order['points'] + order.get('bonus_points', 0)
+    user['points'] = user.get('points', 0) + total
+    history = user.get('recharge_history', [])
+    if not isinstance(history, list):
+        history = []
+    history.append({
+        'pkg_key':   order['pkg_key'],
+        'price_cny': order['price_cny'],
+        'points':    order['points'],
+        'bonus':     order.get('bonus_points', 0),
+        'paid_at':   datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'order_id':  order_id,
+    })
+    user['recharge_history'] = history
+    order['paid_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    save_users(users)
+    return jsonify({
+        "success":  True,
+        "msg":      f"充值成功，到账 {total} 积分",
+        "redirect": url_for('recharge'),
+    })
+
+
+# =====================================================================
+#  MC 服务器（VIP 特权）
+# =====================================================================
+
+@app.route("/api/mc_server_info")
+def api_mc_server_info():
+    """VIP-only 接口：返回 MC 服务器连接信息。"""
+    if 'username' not in session:
+        return jsonify({"success": False, "msg": "请先登录"}), 401
+    user = users.get(session['username'])
+    if not user:
+        return jsonify({"success": False, "msg": "用户不存在"}), 404
+    is_vip, tier, _, _ = is_user_vip(user)
+    if not is_vip:
+        return jsonify({"success": False, "msg": "需要 VIP 会员"}), 403
+    return jsonify({
+        "success": True,
+        "config":  MC_SERVER_CONFIG,
+    })
+
+@app.route("/api/vip_status")
+def api_vip_status():
+    """JSON 接口：当前用户的 VIP 状态。"""
+    username = session.get('username')
+    if not username or username not in users:
+        return jsonify({"is_vip": False, "tier": "", "days_left": 0, "expires_at": ""})
+    is_vip, tier, expires_at, days_left = is_user_vip(users[username])
+    return jsonify({
+        "is_vip": is_vip,
+        "tier": tier,
+        "days_left": days_left,
+        "expires_at": expires_at.strftime('%Y-%m-%d %H:%M:%S') if expires_at else '',
+    })
+
 
 # =====================================================================
 #  贪吃蛇大作战 联机服务器 (WebSocket)
