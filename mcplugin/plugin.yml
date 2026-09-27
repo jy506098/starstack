@@ -1,6 +1,6 @@
-name: StarStack
+name: StarStackmc
 version: 4.0
-main: StarStack
+main: StarStackmc
 api-version: '1.21'
 commands:
     hub:
@@ -637,7 +637,7 @@ commands:
         description: Broadcast to world
         usage: /broadcastworld <msg>
         aliases: [bcw, ebcw, bcastw, ebcastw, ebroadcastworld, shoutworld, eshoutworld]
-    # StarStack modules
+    # StarStackmc modules
     claim:
         description: Create player claim (after marking corners with golden hoe)
         usage: /claim

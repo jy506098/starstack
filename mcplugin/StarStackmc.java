@@ -33,14 +33,14 @@ import java.util.*;
 import java.util.function.Predicate;
 
 /**
- * StarStack main plugin. Contains minigame logic, territories, skywars,
+ * StarStackmc main plugin. Contains minigame logic, territories, skywars,
  * tnt-run, and dispatches essentials commands to Essentials.java.
  *
  * NOTE: The detailed minigame body (skywars random placement, tnt cracking
  * physics, territory snapshot format) is preserved for compatibility with
- * StarStack.class reference; advanced logic in inner classes may be approximated.
+ * StarStackmc.class reference; advanced logic in inner classes may be approximated.
  */
-public class StarStack extends JavaPlugin implements Listener {
+public class StarStackmc extends JavaPlugin implements Listener {
     private File dataFile;
     private List<Territory> territories = new ArrayList<>();
     private long lastReset;
@@ -98,7 +98,7 @@ public class StarStack extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        getLogger().info("StarStack v3.0 enabled - territories + auto-reset + minigames");
+        getLogger().info("StarStackmc v3.0 enabled - territories + auto-reset + minigames");
         if (!getDataFolder().exists()) getDataFolder().mkdirs();
         dataFile = new File(getDataFolder(), "territories.dat");
         loadTerritories();
