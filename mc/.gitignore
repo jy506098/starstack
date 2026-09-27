@@ -15,17 +15,6 @@ bundler/
 bundler-cli/
 
 # Server runtime
-world/
-plugins/
-cache/
-libraries/
-versions/
-logs/
-crash-reports/
-datapacks/
-work/
-__pycache__/
-.paper/
 *.class
 
 # Server runtime configs
