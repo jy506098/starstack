@@ -1,0 +1,10 @@
+{
+  "_comment": "阿里云 DDNS 配置 — 使用前请填好 AccessKey，并安装为 Windows 计划任务",
+  "access_key_id": "你的AccessKeyId",
+  "access_key_secret": "你的AccessKeySecret",
+  "domain": "yoliyo.cn",
+  "sub_domain": "jy",
+  "type": "A",
+  "ttl": 600,
+  "ip_check_url": "https://ifconfig.me/ip"
+}

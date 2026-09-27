@@ -49,20 +49,7 @@ build/
 dist/
 *.spec.bak
 
-# Unrelated tooling present in the project root
-图标.ico
-图标.png
-
-# MC server — build tooling + runtime, never commit
-mc/
-BuildData/
-BuildTools.jar
-BuildTools.log.txt
-apache-maven-3.9.6/
-authlib-injector.jar
-authlib-injector.log
-bundler/
-bundler-cli/
+# MC server build tooling (full rules in mc/.gitignore)
 spark/
 
 # Compiled artifacts (deployed separately, not part of source)

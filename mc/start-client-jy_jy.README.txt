@@ -1,0 +1,75 @@
+jy_jy 启动脚本使用说明
+========================
+
+为什么需要这个脚本
+------------------
+你现在用「纯离线」模式启动 Minecraft 客户端。即使服务器里 SkinsRestorer
+把皮肤设成了 https://littleskin.cn/skin/jy_jy.png，离线客户端也不会去拉
+这个 URL，所以游戏里还是显示旧的黄棕色皮肤。
+
+要让 SkinsRestorer 设的皮肤真正生效，必须让客户端走 LittleSkin 的 yggdrasil
+认证。这个脚本用 authlib-injector 把客户端指向 LittleSkin。
+
+启动前需要做的事
+----------------
+
+1. 用一个 LittleSkin 账号（用户名就是 jy_jy 的 LittleSkin 账号）
+
+   去 https://littleskin.cn 注册/登录，设置好密码
+   （必须用邮箱验证 + 设置密码，纯邮箱登录走不通）
+
+2. 准备客户端 jar
+
+   把 jy_jy 用的 1.20.1 客户端 jar 复制一份到：
+
+       mc\versions\1.20.1\1.20.1.jar
+
+   或者编辑 start-client-jy_jy.bat，把 MC_JAR 改成实际的路径。
+   （HMCL/PCL 启动器的 .minecraft\versions\<ver>\<ver>.jar）
+
+3. 第一次启动
+
+   双击 start-client-jy_jy.bat
+   游戏启动时，authlib-injector 会弹窗要求登录 LittleSkin，
+   输入 jy_jy 的邮箱和密码。
+
+   登录成功后会进游戏，名字叫 jy_jy，皮肤变成 LittleSkin 的
+   jy_jy.png（黑白头发 + 红黑衣服）。
+
+4. 进服务器后
+
+   游戏里执行一次：  /skin update
+   让 SkinsRestorer 把当前激活的皮肤应用到玩家模型。
+
+常见问题
+--------
+
+Q: 弹窗没出现？
+A: 检查 authlib-injector.jar 是否在脚本所在目录 (mc/)。
+   检查防火墙/代理是否拦截 littleskin.cn。
+
+Q: 提示 "Invalid credentials"？
+A: LittleSkin 账号没设置密码，或者密码输错。
+   LittleSkin 必须是「邮箱 + 密码」登录，不能用「邮箱验证码」。
+
+Q: 还是显示旧皮肤？
+A: 在游戏里手动执行 /skin update。
+   如果还不行：退出 → 删除 .minecraft-jy_jy 目录 → 再启动一次。
+
+Q: 能不能用 jy_jy 现成的离线 .minecraft？
+A: 可以。把脚本里的 --gameDir 改成 jy_jy 离线版的 .minecraft 路径。
+   注意首次登录会要求 LittleSkin 账号密码。
+
+Q: 服务器地址对吗？
+A: 脚本默认连 starstack.cn:25565。如果服务器地址不一样，
+   编辑 start-client-jy_jy.bat 顶部的 SERVER_HOST / SERVER_PORT。
+
+服务器侧已经做好
+----------------
+- SkinsRestorer 缓存里有 https://littleskin.cn/skin/jy_jy.png
+- jy_jy 的 UUID 74fd864f-b249-381e-9e46-0e25abe54fe2 的 active skinIdentifier
+  已经指向 jy_jy.png
+- 服务器 online-mode=false 接受离线/外置登录
+- 服务器启动用了 authlib-injector 指向 LittleSkin
+
+所以只需要客户端也走 LittleSkin 登录就能看到新皮肤。

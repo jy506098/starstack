@@ -1,0 +1,56 @@
+# mc/ — track source files (Python, PowerShell, batch, scripts, docs),
+# ignore all server runtime / build artifacts.
+
+# Build tooling (huge — never commit)
+BuildData/
+BuildTools.jar
+BuildTools.log.txt
+Bukkit/
+CraftBukkit/
+Spigot/
+apache-maven-3.9.6/
+authlib-injector.jar
+authlib-injector.log
+bundler/
+bundler-cli/
+
+# Server runtime
+world/
+plugins/
+cache/
+libraries/
+versions/
+logs/
+crash-reports/
+datapacks/
+work/
+__pycache__/
+.paper/
+*.class
+
+# Server runtime configs
+banned-ips.json
+banned-players.json
+eula.txt
+ops.json
+usercache.json
+whitelist.json
+users.json
+bukkit.yml
+commands.yml
+spigot.yml
+server.properties
+config/
+help.yml
+permissions.yml
+
+# Server binaries and logs
+server.jar
+server-vanilla.jar
+server-paper-backup.jar
+spigot-26.2.jar
+server.log
+server-console.log
+
+# Tool outputs
+cyber_city_fix_out/
