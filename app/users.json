@@ -2,17 +2,51 @@
   "陈瑾奕": {
     "password_hash": "scrypt:32768:8:1$ramOX6SV79elecyt$059a58379eed019fedd39335d5291a82d67334099c6ab7b2abd6d8a4cde9409624b5021cb37099da2d0e0c94dd292c0f0261dfe02903eb9163b977382b709ff4",
     "phone": "",
-    "points": 105,
+    "points": 3118,
     "inventory": {},
-    "tasks": {},
+    "tasks": {
+      "post_message": {
+        "completed": true,
+        "last_date": "2026-09-20"
+      },
+      "buy_item": {
+        "completed": true,
+        "last_date": "2026-09-24"
+      },
+      "use_item": {
+        "completed": true,
+        "last_date": "2026-09-24"
+      },
+      "spend_master": {
+        "completed": true,
+        "last_date": "2026-09-26"
+      }
+    },
     "daily_tasks_completed": {
-      "daily_visit": "2026-09-12"
+      "daily_visit": "2026-09-20",
+      "daily_login": "2026-09-26",
+      "daily_buy": "2026-09-24",
+      "daily_use": "2026-09-26"
     },
     "daily_visit_count": 8,
-    "last_visit_date": "2026-09-12",
-    "last_post_date": "",
-    "total_spent": 0,
-    "unlocked_content": [],
+    "last_visit_date": "2026-09-26",
+    "last_post_date": "2026-09-26",
+    "total_spent": 3327,
+    "unlocked_content": [
+      "游戏手柄",
+      "飞扬的小鸟",
+      "水果忍者",
+      "抛硬币小游戏",
+      "打砖块",
+      "杀戮尖塔",
+      "雷电战机",
+      "扫雷",
+      "2048",
+      "贪吃蛇大作战",
+      "俄罗斯方块",
+      "音乐播放器",
+      "降噪耳机"
+    ],
     "effects": {},
     "is_admin": false,
     "admin_daily_points_date": "",
@@ -22,7 +56,74 @@
       "color_mode": "rainbow",
       "shape": "circle"
     },
-    "avatar": "default:#3498db"
+    "avatar": "default:none",
+    "vip_tier": "SSVIP",
+    "vip_expires_at": "2030-03-12 17:28:53",
+    "last_vip_bonus_date": "2026-09-26",
+    "vip_purchase_history": [
+      {
+        "tier": "SSVIP",
+        "duration_days": 90,
+        "price_cny": 2000,
+        "paid_at": "2026-09-14 17:28:53",
+        "order_id": "0ec0ab4e046049b6"
+      },
+      {
+        "tier": "VIP",
+        "duration_days": 365,
+        "price_cny": 400,
+        "paid_at": "2026-09-14 17:29:08",
+        "order_id": "19b73394645a44ea"
+      },
+      {
+        "tier": "SSVIP",
+        "duration_days": 365,
+        "price_cny": 6400,
+        "paid_at": "2026-09-14 17:30:20",
+        "order_id": "b2e30d62508c408f"
+      },
+      {
+        "tier": "SSVIP",
+        "duration_days": 90,
+        "price_cny": 2000,
+        "paid_at": "2026-09-20 18:26:38",
+        "order_id": "3141aa92b4184af0"
+      },
+      {
+        "tier": "SSVIP",
+        "duration_days": 365,
+        "price_cny": 6400,
+        "paid_at": "2026-09-20 18:26:52",
+        "order_id": "855c51a13cfd4cdb"
+      }
+    ],
+    "vip_pending_order_id": "",
+    "recharge_history": [
+      {
+        "pkg_key": "RECHARGE-2000",
+        "price_cny": 200,
+        "points": 3500,
+        "bonus": 800,
+        "paid_at": "2026-09-25 18:45:17",
+        "order_id": "4a0d695939c24116"
+      },
+      {
+        "pkg_key": "RECHARGE-2000",
+        "price_cny": 200,
+        "points": 3500,
+        "bonus": 800,
+        "paid_at": "2026-09-25 18:45:30",
+        "order_id": "d3d2b8c4290b4415"
+      },
+      {
+        "pkg_key": "RECHARGE-2000",
+        "price_cny": 200,
+        "points": 3500,
+        "bonus": 800,
+        "paid_at": "2026-09-26 09:38:45",
+        "order_id": "84680a13d82946f2"
+      }
+    ]
   },
   "Claude_Code": {
     "password_hash": "scrypt:32768:8:1$hi6yfoKysmhNoQHb$2488a643c4f43c88455409b8796d338a49ab53476e9b0f386ff7b13d310ff54d31f4542fa5e6993955135e3a81741990d7d56fd1f9fa136635627d1a94271d21",
@@ -45,6 +146,110 @@
       "color_mode": "rainbow",
       "shape": "circle"
     },
-    "avatar": "default:#3498db"
+    "avatar": "default:none",
+    "vip_tier": "",
+    "vip_expires_at": "",
+    "last_vip_bonus_date": "",
+    "vip_purchase_history": [],
+    "vip_pending_order_id": "",
+    "recharge_history": []
+  },
+  "Cline": {
+    "password_hash": "scrypt:32768:8:1$hi6yfoKysmhNoQHb$2488a643c4f43c88455409b8796d338a49ab53476e9b0f386ff7b13d310ff54d31f4542fa5e6993955135e3a81741990d7d56fd1f9fa136635627d1a94271d21",
+    "phone": "",
+    "points": 100,
+    "inventory": {},
+    "tasks": {},
+    "daily_tasks_completed": {},
+    "daily_visit_count": 1,
+    "last_visit_date": "2026-09-12",
+    "last_post_date": "",
+    "total_spent": 0,
+    "unlocked_content": [],
+    "effects": {},
+    "is_admin": false,
+    "admin_daily_points_date": "",
+    "admin_daily_points_count": 0,
+    "mouse_effect_config": {
+      "enabled": true,
+      "color_mode": "rainbow",
+      "shape": "circle"
+    },
+    "avatar": "default:none",
+    "vip_tier": "",
+    "vip_expires_at": "",
+    "last_vip_bonus_date": "",
+    "vip_purchase_history": [],
+    "vip_pending_order_id": "",
+    "recharge_history": []
+  },
+  "xx": {
+    "password_hash": "scrypt:32768:8:1$WqdA8uPcLf6pkrX9$603e77c9f1fc9c9014fab4ff7ae75f254c9514ab5532d3ccbfb7cf3ce4bb6c508eeb06e51f8350b4b8015d553b5d259cacba3d0fbb91b88d1cc2fdf1a7f728af",
+    "phone": "",
+    "points": 4351,
+    "inventory": {},
+    "tasks": {
+      "post_message": {
+        "completed": true,
+        "last_date": "2026-09-25"
+      },
+      "buy_item": {
+        "completed": true,
+        "last_date": "2026-09-25"
+      },
+      "use_item": {
+        "completed": true,
+        "last_date": "2026-09-25"
+      },
+      "spend_master": {
+        "completed": true,
+        "last_date": "2026-09-25"
+      }
+    },
+    "daily_tasks_completed": {
+      "daily_login": "2026-09-25",
+      "daily_visit": "2026-09-25"
+    },
+    "daily_visit_count": 5,
+    "last_visit_date": "2026-09-25",
+    "last_post_date": "2026-09-25",
+    "total_spent": 538,
+    "unlocked_content": [
+      "编程秘籍",
+      "降噪耳机"
+    ],
+    "effects": {},
+    "is_admin": false,
+    "admin_daily_points_date": "",
+    "admin_daily_points_count": 0,
+    "mouse_effect_config": {
+      "enabled": true,
+      "color_mode": "rainbow",
+      "shape": "circle"
+    },
+    "avatar": "default:none",
+    "vip_tier": "SSVIP",
+    "vip_expires_at": "2027-09-20 18:36:41",
+    "last_vip_bonus_date": "2026-09-25",
+    "vip_purchase_history": [
+      {
+        "tier": "SSVIP",
+        "duration_days": 365,
+        "price_cny": 6400,
+        "paid_at": "2026-09-20 18:36:41",
+        "order_id": "04619a262692405f"
+      }
+    ],
+    "vip_pending_order_id": "",
+    "recharge_history": [
+      {
+        "pkg_key": "RECHARGE-2000",
+        "price_cny": 200,
+        "points": 3500,
+        "bonus": 800,
+        "paid_at": "2026-09-25 18:31:09",
+        "order_id": "8b07ed24e03f4864"
+      }
+    ]
   }
 }

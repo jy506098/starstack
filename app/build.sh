@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Unix 一键打包脚本：生成 dist/MyApp/ 目录
+# Unix 一键打包脚本：生成 dist/StarStack.exe (PyInstaller --onefile)
 set -e
 cd "$(dirname "$0")"
 
 echo "=============================================="
-echo "  MyApp 桌面壳打包 (PyInstaller --onedir)"
+echo "  StarStack 桌面壳打包 (PyInstaller --onefile)"
 echo "=============================================="
 echo
 
@@ -25,7 +25,7 @@ if ! $PYEXE -c "import flask, gevent, geventwebsocket, webview, PyInstaller" >/d
     $PYEXE -m pip install pyinstaller
 fi
 
-rm -rf build dist MyApp.spec
+rm -rf build dist StarStack.spec
 
 echo "[3/4] PyInstaller 打包中..."
 $PYEXE -m PyInstaller build.spec
@@ -33,6 +33,6 @@ $PYEXE -m PyInstaller build.spec
 echo
 echo "[4/4] 完成！"
 echo
-echo "输出文件: dist/MyApp.exe"
-echo "启动 GUI:  dist/MyApp.exe"
-echo "仅后端:    dist/MyApp.exe --backend"
+echo "输出文件: dist/StarStack.exe"
+echo "启动 GUI:  dist/StarStack.exe"
+echo "仅后端:    dist/StarStack.exe --backend"

@@ -1,0 +1,55 @@
+# Server runtime — never commit
+world/
+plugins/
+cache/
+libraries/
+versions/
+logs/
+crash-reports/
+banned-ips.json
+banned-players.json
+eula.txt
+ops.json
+server.properties
+spigot.yml
+bukkit.yml
+commands.yml
+whitelist.json
+usercache.json
+main_city_territories.dat
+
+# Build outputs
+build/
+build-out/
+dist/
+jar-out*/
+stub-out/
+stub-src/
+stub-translation.jar
+test-build/
+
+# Compiled artifacts — never commit (they're in the deployed plugin jar already)
+*.class
+*.jar
+
+# Test scratch files
+Mini.java
+Mini2.java
+Mini3.java
+Mini4.java
+Mini5.java
+Test.java
+TestMini.java
+test-src.java
+test/
+helpers/
+
+# Logs and stray files
+err.log
+out.txt
+javac-stderr.log
+javac-stdout.log
+compile-test.bat
+
+# Backups
+*.bak

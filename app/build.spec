@@ -2,9 +2,9 @@
 # PyInstaller spec for the desktop app.
 # Build:  pyinstaller build.spec
 #
-# Output: dist/MyApp/MyApp.exe + sibling files (--onedir)
-# Usage:  double-click dist/MyApp/MyApp.exe  → opens the GUI window
-#         dist/MyApp/MyApp.exe --backend     → starts only the Flask backend
+# Output: dist/StarStack.exe  (--onefile, single self-contained binary)
+# Usage:  double-click dist/StarStack.exe  → opens the GUI window
+#         dist/StarStack.exe --backend     → starts only the Flask backend
 #         (the GUI binary spawns --backend internally)
 
 import sys
@@ -15,8 +15,8 @@ sys.path.insert(0, '.')
 
 from PyInstaller.utils.hooks import collect_all
 
-APP_DIR = Path('.').resolve()  # C:\Users\aa\Desktop\jyProject\project\app
-PROJECT_DIR = APP_DIR.parent   # C:\Users\aa\Desktop\jyProject\project
+APP_DIR = Path('.').resolve()  # C:\Users\aa\Desktop\jyProject\StarStack\app
+PROJECT_DIR = APP_DIR.parent   # C:\Users\aa\Desktop\jyProject\StarStack
 
 block_cipher = None
 
@@ -89,7 +89,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='MyApp',
+    name='StarStack',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 > nul
-REM Windows 一键打包脚本：生成 dist\MyApp\ 目录
+REM Windows 一键打包脚本：生成 dist\StarStack.exe (PyInstaller --onefile)
 cd /d "%~dp0"
 
 echo ==============================================
-echo   MyApp 桌面壳打包 (PyInstaller --onedir)
+echo   StarStack 桌面壳打包 (PyInstaller --onefile)
 echo ==============================================
 echo.
 
@@ -41,7 +41,7 @@ if errorlevel 1 (
 REM 清理旧 build
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
-if exist MyApp.spec del MyApp.spec >nul 2>nul
+if exist StarStack.spec del StarStack.spec >nul 2>nul
 
 echo [3/4] PyInstaller 打包中（首次会慢，2-5 分钟）...
 %PYEXE% -m PyInstaller build.spec
@@ -53,11 +53,11 @@ if errorlevel 1 (
 echo.
 echo [4/4] 完成！
 echo.
-echo 输出文件: dist\MyApp.exe
-echo 启动 GUI:  直接双击 dist\MyApp.exe
-echo 仅后端:    dist\MyApp.exe --backend
+echo 输出文件: dist\StarStack.exe
+echo 启动 GUI:  直接双击 dist\StarStack.exe
+echo 仅后端:    dist\StarStack.exe --backend
 echo.
-echo 把 dist\MyApp.exe 复制到任何 Windows 机器就能运行（需要装 WebView2 Runtime，Win11 自带）。
+echo 把 dist\StarStack.exe 复制到任何 Windows 机器就能运行（需要装 WebView2 Runtime，Win11 自带）。
 echo.
 
 pause

@@ -88,7 +88,7 @@ def _start_backend(port: int) -> subprocess.Popen:
     冻结后 PyInstaller bootloader 不接受脚本路径参数，
     所以我们用 argv-flag 调度：同一个 exe 启动后端模式。
     """
-    # 冻结后 sys.executable 是 dist/MyApp/MyApp.exe 真实路径；
+    # 冻结后 sys.executable 是 dist/StarStack.exe 真实路径；
     # 开发模式是 python.exe。两种情况都通过 --backend flag 复用 main.py 的调度逻辑。
     exe = sys.executable
     log.info(f"启动后端: {exe} --backend (port={port})")
@@ -97,7 +97,7 @@ def _start_backend(port: int) -> subprocess.Popen:
     if os.name == 'nt':
         creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
 
-    # cwd 必须是 app/ 所在目录（冻结时是 dist/MyApp/，开发时是 app/）
+    # cwd 必须是 app/ 所在目录（冻结时是 StarStack.exe 所在目录，开发时是 app/）
     # 这样 app.py 内的 BASE_DIR = dirname(__file__) 能正确解析
     cwd = str(_HERE)
 
@@ -171,7 +171,7 @@ def main():
         log.info(f"打开窗口: {url}")
 
         window = webview.create_window(
-            title="留言板 + 贪吃蛇联机",
+            title="StarStack",
             url=url,
             width=1280,
             height=820,

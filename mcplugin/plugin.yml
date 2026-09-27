@@ -1,0 +1,735 @@
+name: StarStack
+version: 4.0
+main: StarStack
+api-version: '1.21'
+commands:
+    hub:
+        description: Return to main hub
+        usage: /hub
+    the_end:
+        description: Teleport to end portal
+        usage: /the_end
+    territory:
+        description: Territory system (admin)
+        usage: /territory help
+    bedwars:
+        description: Bedwars minigame
+        usage: /bedwars join|leave
+    skywars:
+        description: Skywars minigame
+        usage: /skywars join|leave
+    pvp:
+        description: PVP arena minigame
+        usage: /pvp join|leave
+    survival:
+        description: Survival challenge minigame
+        usage: /survival join|leave
+    tnt:
+        description: TNT run minigame
+        usage: /tnt join|leave
+    register:
+        description: AuthMe register
+        usage: /register <password>
+    login:
+        description: AuthMe login
+        usage: /login <password>
+    changepassword:
+        description: AuthMe change password
+        usage: /changepassword <old> <new>
+    logout:
+        description: AuthMe logout
+        usage: /logout
+    # EssentialsX home
+    home:
+        description: Teleport home
+        usage: /home [name]
+        aliases: [ehome, homes]
+    sethome:
+        description: Set home
+        usage: /sethome [name]
+        aliases: [esethome, createhome, ecreatehome]
+    delhome:
+        description: Delete home
+        usage: /delhome <name>
+        aliases: [edelhome, remhome, eremhome, rmhome, ermhome]
+    renamehome:
+        description: Rename a home
+        usage: /renamehome <old> <new>
+        aliases: [erenamehome]
+    # EssentialsX spawn
+    spawn:
+        description: Teleport to spawn
+        usage: /spawn
+    setspawn:
+        description: Set spawn (OP)
+        usage: /setspawn
+    # EssentialsX teleport
+    tpa:
+        description: Request teleport to player
+        usage: /tpa <player>
+        aliases: [call, ecall, etpa, tpask, etpask]
+    tpahere:
+        description: Request that player teleport to you
+        usage: /tpahere <player>
+        aliases: [etpahere]
+    tpaccept:
+        description: Accept teleport request
+        usage: /tpaccept
+        aliases: [etpaccept, tpyes, etpyes]
+    tpdeny:
+        description: Deny teleport request
+        usage: /tpdeny
+        aliases: [etpdeny, tpno, etpno]
+    tpacancel:
+        description: Cancel pending teleport request
+        usage: /tpacancel
+        aliases: [etpacancel]
+    tpall:
+        description: Teleport all players to you
+        usage: /tpall
+        aliases: [etpall]
+    tpaall:
+        description: Request all teleport to you
+        usage: /tpaall
+        aliases: [etpaall]
+    tpo:
+        description: Teleport to offline player
+        usage: /tpo <player>
+        aliases: [etpo]
+    tpohere:
+        description: Teleport offline player here
+        usage: /tpohere <player>
+        aliases: [etpohere]
+    tpoffline:
+        description: Teleport to offline player (alias tpo)
+        usage: /tpoffline <player>
+        aliases: [otp, offlinetp, tpoff, etpoffline]
+    tpauto:
+        description: Toggle auto-teleport-accept
+        usage: /tpauto
+        aliases: [etpauto]
+    tpr:
+        description: Random teleport
+        usage: /tpr
+        aliases: [etpr, tprandom, etprandom]
+    settpr:
+        description: Set random teleport center
+        usage: /settpr
+        aliases: [esettpr, settprandom, esettprandom]
+    tptoggle:
+        description: Toggle teleport requests
+        usage: /tptoggle
+        aliases: [etptoggle]
+    back:
+        description: Teleport to previous location
+        usage: /back
+        aliases: [eback, return, eturn]
+    # EssentialsX messaging
+    msg:
+        description: Private message
+        usage: /msg <player> <message>
+        aliases: [w, m, t, pm, emsg, epm, tell, etell, whisper, ewhisper]
+    r:
+        description: Reply to last message
+        usage: /r <message>
+        aliases: [er, reply, ereply]
+    rtoggle:
+        description: Toggle reply
+        usage: /rtoggle
+        aliases: [ertoggle, replytoggle, ereplytoggle]
+    msgtoggle:
+        description: Toggle private messages
+        usage: /msgtoggle
+        aliases: [emsgtoggle]
+    afk:
+        description: Toggle AFK status
+        aliases: [eafk, away, eaway]
+    # EssentialsX player utility
+    heal:
+        description: Heal player
+        usage: /heal [player]
+        aliases: [eheal]
+    feed:
+        description: Feed player
+        usage: /feed [player]
+        aliases: [eat, eeat, efeed]
+    fly:
+        description: Toggle fly mode
+        usage: /fly [player]
+        aliases: [efly]
+    god:
+        description: Toggle god mode
+        usage: /god [player]
+        aliases: [egod, godmode, egodmode, tgm, etgm]
+    repair:
+        description: Repair held item
+        usage: /repair
+        aliases: [fix, efix, erepair]
+    hat:
+        description: Put held item on head
+        usage: /hat
+        aliases: [ehat, head, ehead]
+    workbench:
+        description: Open workbench
+        usage: /workbench
+        aliases: [craft, ecraft, wb, ewb, wbench, ewbench, eworkbench]
+    jump:
+        description: Jump to crosshair target
+        usage: /jump
+        aliases: [j, ej, ejump, jumpto, ejumpto]
+    compass:
+        description: Show or set compass direction
+        usage: /compass
+        aliases: [ecompass, direction, edirection]
+    getpos:
+        description: Show coords
+        usage: /getpos
+        aliases: [coords, egetpos, position, eposition, whereami, ewhereami, getlocation, egetlocation, getloc, egetloc]
+    depth:
+        description: Show y level
+        usage: /depth
+        aliases: [edepth, height, eheight]
+    near:
+        description: List nearby players
+        usage: /near
+        aliases: [enear, nearby, enearby]
+    info:
+        description: Server info
+        usage: /info
+        aliases: [about, eabout, ifo, eifo, einfo, inform, einform, news, enews]
+    seen:
+        description: Last login
+        usage: /seen <player>
+        aliases: [eseen, ealts, alts]
+    suicide:
+        description: Kill self
+        usage: /suicide
+        aliases: [esuicide]
+    ignore:
+        description: Toggle ignoring player
+        usage: /ignore <player>
+        aliases: [eignore, unignore, eunignore, delignore, edelignore, remignore, eremignore, rmignore, ermignore]
+    ping:
+        description: Show ping
+        usage: /ping [player]
+        aliases: [echo, eecho, eping, pong, epong]
+    me:
+        description: Roleplay action
+        usage: /me <action>
+        aliases: [action, eaction, describe, edescribe, eme]
+    ptime:
+        description: Personal time
+        usage: /ptime <day|night>
+        aliases: [playertime, eplayertime, eptime]
+    pweather:
+        description: Personal weather
+        usage: /pweather <sun|rain|storm>
+        aliases: [playerweather, eplayerweather, epweather]
+    speed:
+        description: Set walk/fly speed
+        usage: /speed <0-10>
+        aliases: [flyspeed, eflyspeed, fspeed, efspeed, espeed, walkspeed, ewalkspeed, wspeed, ewspeed]
+    nick:
+        description: Set nickname
+        usage: /nick <name>
+        aliases: [enick, nickname, enickname]
+    realname:
+        description: Resolve nick to real name
+        usage: /realname <nick>
+        aliases: [erealname]
+    whois:
+        description: Player info
+        usage: /whois <player>
+        aliases: [ewhois]
+    rules:
+        description: Show rules
+        usage: /rules
+        aliases: [erules]
+    motd:
+        description: Show MOTD
+        usage: /motd
+        aliases: [emotd]
+    top:
+        description: Teleport to highest block
+        usage: /top
+        aliases: [etop]
+    bottom:
+        description: Teleport to highest block below
+        usage: /bottom
+        aliases: [ebottom]
+    playtime:
+        description: Show playtime
+        usage: /playtime [player]
+        aliases: [eplaytime]
+    essentials:
+        description: Plugin info
+        usage: /essentials
+        aliases: [eessentials, ess, eess, essversion]
+    # EssentialsX world
+    world:
+        description: Teleport to world
+        usage: /world <name>
+        aliases: [eworld]
+    worlds:
+        description: List worlds
+        usage: /worlds
+    # EssentialsX warp
+    warp:
+        description: Teleport to warp
+        usage: /warp <name>
+        aliases: [ewarp]
+    warps:
+        description: List warps
+        usage: /warps
+        aliases: [ewarps]
+    setwarp:
+        description: Create warp (OP)
+        usage: /setwarp <name>
+        aliases: [createwarp, ecreatewarp, esetwarp]
+    delwarp:
+        description: Delete warp (OP)
+        usage: /delwarp <name>
+        aliases: [edelwarp, remwarp, eremwarp, rmwarp, ermwarp]
+    warpinfo:
+        description: Warp info
+        usage: /warpinfo <name>
+        aliases: [ewarpinfo]
+    # EssentialsX economy
+    balance:
+        description: Show money
+        usage: /balance [player]
+        aliases: [bal, ebal, ebalance, money, emoney]
+    balancetop:
+        description: Top balances
+        usage: /balancetop
+        aliases: [ebalancetop, baltop, ebaltop]
+    pay:
+        description: Pay player
+        usage: /pay <player> <amount>
+        aliases: [epay]
+    paytoggle:
+        description: Toggle receiving pays
+        usage: /paytoggle
+        aliases: [epaytoggle, payoff, epayoff, payon, epayon]
+    payconfirmtoggle:
+        description: Toggle pay confirm
+        usage: /payconfirmtoggle
+        aliases: [epayconfirmtoggle, payconfirmoff, epayconfirmoff, payconfirmon, epayconfirmon, payconfirm, epayconfirm]
+    eco:
+        description: Admin economy
+        usage: /eco <give|take|set> <player> <amount>
+        aliases: [eeco, economy, eeconomy]
+    worth:
+        description: Item worth
+        usage: /worth [item]
+        aliases: [eprice, price, eworth]
+    sell:
+        description: Sell held item
+        usage: /sell
+        aliases: [esell]
+    setworth:
+        description: Set item worth (OP)
+        usage: /setworth <item> <value>
+        aliases: [esetworth]
+    # EssentialsX kit
+    kit:
+        description: Use kit
+        usage: /kit <name>
+        aliases: [ekit]
+    kits:
+        description: List kits
+        usage: /kits
+        aliases: [ekits]
+    createkit:
+        description: Create kit
+        usage: /createkit <name>
+        aliases: [kitcreate, createk, kc, ck, ecreatekit]
+    delkit:
+        description: Delete kit
+        usage: /delkit <name>
+        aliases: [edelkit, remkit, eremkit, rmkit, ermkit, deletekit, edeletekit]
+    showkit:
+        description: Preview kit
+        usage: /showkit <name>
+        aliases: [kitpreview, preview, kitshow]
+    kitreset:
+        description: Reset kit cooldown
+        usage: /kitreset <player> [kit]
+        aliases: [ekitreset, kitr, ekitr, resetkit, eresetkit]
+    # EssentialsX moderation
+    kick:
+        description: Kick player
+        usage: /kick <player> [reason]
+        aliases: [ekick]
+    kickall:
+        description: Kick all players
+        usage: /kickall
+        aliases: [ekickall]
+    ban:
+        description: Ban player
+        usage: /ban <player> [reason]
+        aliases: [eban]
+    tempban:
+        description: Temp ban
+        usage: /tempban <player> <duration> [reason]
+        aliases: [etempban]
+    banip:
+        description: Ban IP
+        usage: /banip <ip>
+        aliases: [ebanip]
+    tempbanip:
+        description: Temp ban IP
+        usage: /tempbanip <ip> <duration>
+        aliases: [etempbanip]
+    unban:
+        description: Unban player
+        usage: /unban <player>
+        aliases: [pardon, eunban, epardon]
+    unbanip:
+        description: Unban IP
+        usage: /unbanip <ip>
+        aliases: [eunbanip, pardonip, epardonip]
+    mute:
+        description: Mute player
+        usage: /mute <player> [duration]
+        aliases: [emute]
+    unmute:
+        description: Unmute player
+        usage: /unmute <player>
+        aliases: [eunmute, silence, esilence]
+    jail:
+        description: Jail player
+        usage: /jail <player> [duration]
+        aliases: [ejail]
+    unjail:
+        description: Unjail player
+        usage: /unjail <player>
+        aliases: [eunjail]
+    jails:
+        description: List jails
+        usage: /jails
+        aliases: [ejails]
+    setjail:
+        description: Set jail (OP)
+        usage: /setjail <name>
+        aliases: [esetjail, createjail, ecreatejail]
+    deljail:
+        description: Delete jail (OP)
+        usage: /deljail <name>
+        aliases: [edeljail, remjail, eremjail, rmjail, ermjail]
+    jailedplayers:
+        description: List jailed players
+        usage: /jailedplayers
+        aliases: [ejailedplayers, ejailed, ejp]
+    togglejail:
+        description: Toggle jail
+        usage: /togglejail <player>
+        aliases: [tjail, etjail, etogglejail]
+    # EssentialsX combat/effects
+    burn:
+        description: Set player on fire
+        usage: /burn <player> <seconds>
+        aliases: [eburn]
+    ext:
+        description: Extinguish
+        usage: /ext [player]
+        aliases: [eext, extinguish, eextinguish]
+    lightning:
+        description: Strike lightning
+        usage: /lightning <player>
+        aliases: [elightning, shock, eshock, smite, esmite, strike, estrike, thor, ethor]
+    nuke:
+        description: Nuke player
+        usage: /nuke <player>
+        aliases: [enuke]
+    fireball:
+        description: Shoot fireball
+        usage: /fireball [player]
+        aliases: [efireball, fireentity, efireentity, fireskull, efireskull]
+    thunder:
+        description: Toggle thunder
+        usage: /thunder
+        aliases: [ethunder]
+    freeze:
+        description: Freeze player
+        usage: /freeze <player>
+        aliases: [efreeze, ice, eice]
+    antioch:
+        description: Give primed TNT
+        usage: /antioch
+        aliases: [eantioch, grenade, egrenade, tnt, etnt]
+    beezooka:
+        description: Give bee spawn egg
+        usage: /beezooka
+        aliases: [ebeezooka, beecannon, ebeecannon]
+    kittycannon:
+        description: Give ocelot spawn egg
+        usage: /kittycannon
+        aliases: [ekittycannon]
+    firework:
+        description: Spawn firework
+        usage: /firework [color]
+        aliases: [efirework, color, ecolor]
+    poof:
+        description: Poof vanish effect
+        usage: /poof
+    vanish:
+        description: Toggle vanish
+        usage: /vanish [player]
+        aliases: [v, ev, evanish]
+    socialspy:
+        description: Toggle socialspy
+        usage: /socialspy
+        aliases: [esocialspy]
+    sudo:
+        description: Force player to run command
+        usage: /sudo <player> <cmd>
+        aliases: [esudo]
+    # EssentialsX item utility
+    item:
+        description: Give self item
+        usage: /item <item> [amount]
+        aliases: [i, eitem, ei]
+    more:
+        description: Max stack held item
+        usage: /more
+        aliases: [emore]
+    skull:
+        description: Get player skull
+        usage: /skull <player>
+        aliases: [eskull, playerskull, eplayerskull, ehead]
+    itemlore:
+        description: Set lore
+        usage: /itemlore <text>
+        aliases: [lore, elore, ilore, eilore, eitemlore]
+    itemname:
+        description: Set name
+        usage: /itemname <name>
+        aliases: [iname, einame, eitemname, itemrename, irename, eitemrename, eirename]
+    itemdb:
+        description: Show item data
+        usage: /itemdb
+        aliases: [dura, edura, durability, edurability, eitemdb, itemno, eitemno]
+    invsee:
+        description: Open player inventory
+        usage: /invsee <player>
+        aliases: [einvsee]
+    clearinventory:
+        description: Clear inventory
+        usage: /clearinventory [player]
+        aliases: [ci, eci, clean, eclean, clear, eclear, clearinvent, eclearinvent, eclearinventory]
+    powertool:
+        description: Bind held item to command
+        usage: /powertool <cmd>
+        aliases: [epowertool, pt, ept]
+    powertooltoggle:
+        description: Toggle powertool
+        usage: /powertooltoggle
+        aliases: [epowertooltoggle, ptt, eptt, pttoggle, epttoggle]
+    powertoollist:
+        description: List powertools
+        usage: /powertoollist
+        aliases: [epowertoollist, ptlist, eptlist]
+    unlimited:
+        description: Give unlimited item
+        usage: /unlimited [item]
+        aliases: [eunlimited, ul, unl, eul, eunl]
+    # EssentialsX containers
+    anvil:
+        description: Open anvil
+        usage: /anvil
+        aliases: [eanvil]
+    enderchest:
+        description: Open ender chest
+        usage: /enderchest [player]
+        aliases: [echest, eechest, eenderchest, endersee, eendersee, ec, eec]
+    grindstone:
+        description: Open grindstone
+        usage: /grindstone
+        aliases: [egrindstone]
+    loom:
+        description: Open loom
+        usage: /loom
+        aliases: [eloom]
+    cartographytable:
+        description: Open cartography table
+        usage: /cartographytable
+        aliases: [ecartographytable, carttable, ecarttable]
+    stonecutter:
+        description: Open stonecutter
+        usage: /stonecutter
+        aliases: [estonecutter]
+    smithingtable:
+        description: Open smithing table
+        usage: /smithingtable
+        aliases: [esmithingtable, smithtable, esmithtable]
+    recipe:
+        description: Show recipe
+        usage: /recipe <item>
+        aliases: [formula, eformula, method, emethod, erecipe]
+    recipes:
+        description: List recipes
+        usage: /recipes
+        aliases: [erecipes]
+    book:
+        description: Open book editor
+        usage: /book
+        aliases: [ebook]
+    editsign:
+        description: Edit sign
+        usage: /editsign
+        aliases: [sign, esign, eeditsign]
+    disposal:
+        description: Open trash
+        usage: /disposal
+        aliases: [edisposal, trash, etrash]
+    spawner:
+        description: Get mob spawner
+        usage: /spawner <mob>
+        aliases: [echangems, espawner, mobspawner, emobspawner]
+    spawnmob:
+        description: Spawn mobs
+        usage: /spawnmob <mob> [count]
+        aliases: [mob, emob, spawnentity, espawnentity, espawnmob]
+    bigtree:
+        description: Spawn big tree at crosshair
+        usage: /bigtree
+        aliases: [ebigtree, largetree, elargetree]
+    tree:
+        description: Spawn tree at crosshair
+        usage: /tree
+        aliases: [etree]
+    forest:
+        description: Fill area with trees
+        usage: /forest
+    condense:
+        description: Condense held item to blocks
+        usage: /condense
+        aliases: [econdense, compact, ecompact, blocks, eblocks, toblocks, etoblocks]
+    break:
+        description: Break block at crosshair
+        usage: /break
+        aliases: [ebreak]
+    # EssentialsX gamemode
+    # EssentialsX mail
+    mail:
+        description: Mail system
+        usage: /mail send|read|clear
+        aliases: [email, eemail, memo, ememo]
+    # EssentialsX misc
+    potion:
+        description: Apply potion effect
+        usage: /potion <effect>
+        aliases: [epotion, elixer, eelixer]
+    backup:
+        description: Backup (OP)
+        usage: /backup
+        aliases: [ebackup]
+    gc:
+        description: Garbage collection info
+        usage: /gc
+        aliases: [lag, elag, egc, mem, emem, memory, ememory, uptime, euptime, tps, etps, entities, eentities]
+    broadcast:
+        description: Broadcast message
+        usage: /broadcast <msg>
+        aliases: [bc, ebc, bcast, ebcast, ebroadcast, shout, eshout]
+    broadcastworld:
+        description: Broadcast to world
+        usage: /broadcastworld <msg>
+        aliases: [bcw, ebcw, bcastw, ebcastw, ebroadcastworld, shoutworld, eshoutworld]
+    # StarStack modules
+    claim:
+        description: Create player claim (after marking corners with golden hoe)
+        usage: /claim
+    treeminer:
+        description: Toggle tree chain-mining
+        usage: /treeminer
+    market:
+        description: RPTMarket player shop system
+        usage: /market <create|remove|price|find|stock|history|sell|buy|category|admin>
+        aliases: [shop, rptmarket]
+    bank:
+        description: Mintconomy bank accounts
+        usage: /bank <create|delete|deposit|withdraw|balance|members|invite|kick|leave|list>
+    loan:
+        description: Mintconomy loans
+        usage: /loan <request|repay|list>
+    money:
+        description: Mintconomy money utilities
+        usage: /money <log|top|format|toggle|pay>
+        aliases: [bal]
+    co:
+        description: CoreProtect block/player logging
+        usage: /co <inspect|lookup|rollback|restore|purge|reload|help|near>
+        aliases: [coreprotect, core]
+    magister:
+        description: MagisterAC anti-cheat
+        usage: /magister <check|vl|toggle|exempt|reset|list|reload>
+        aliases: [ac, anticheat]
+    lp:
+        description: LuckPerms permission system
+        usage: /lp <user|group|track|search|reload>
+        aliases: [luckperms, permissions]
+    rpi:
+        description: Raspberry Pi (mcpi) Python bridge server
+        usage: /rpi [status|port <n>|reload|stop]
+        aliases: [raspberrypi, mcpiserver, mcpi]
+    gamemode:
+        description: Switch game mode
+        usage: /gamemode <mode> [player]
+        aliases: [gm, gms, gmc, gma, egamemode]
+    time:
+        description: Set world time
+        usage: /time <day|night|dawn|dusk|number>
+        aliases: [etime, etimec, dayc, nightc]
+    tp:
+        description: Teleport
+        usage: /tp <player1> [player2]
+        aliases: [teleport, etp]
+    tphere:
+        description: Teleport player to you
+        usage: /tphere <player>
+    tppos:
+        description: Teleport to coordinates
+        usage: /tppos <x> <y> <z>
+    give:
+        description: Give item to player
+        usage: /give <player> <item> [amount]
+        aliases: [egive, itemgive]
+    kill:
+        description: Kill a player
+        usage: /kill [player]
+    list:
+        description: List online players
+        usage: /list
+        aliases: [online, ls, elist]
+    help:
+        description: Show help
+        usage: /help
+        aliases: [?, commands, ehelp]
+    enchant:
+        description: Enchant held item
+        usage: /enchant <enchantment> [level]
+        aliases: [eenchant, ench]
+    exp:
+        description: Give experience
+        usage: /exp <amount>
+        aliases: [xp, xpadd]
+    weather:
+        description: Set weather
+        usage: /weather <sun|rain|storm>
+        aliases: [eweather, sky]
+    skin:
+        description: SkinsRestorer skin management (forwarded to embedded SkinsRestorer)
+        usage: /skin <subcommand>
+        aliases: [skinsrestorer, sr]
+    skins:
+        description: SkinsRestorer skin selection GUI (forwarded to embedded SkinsRestorer)
+        usage: /skins
+    permissions:
+        starstack.use:
+            default: true
+        starstack.market.create:
+            default: true
+        starstack.market.admin:
+            default: op
