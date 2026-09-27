@@ -49,9 +49,6 @@ build/
 dist/
 *.spec.bak
 
-# MC server build tooling (full rules in mc/.gitignore)
-spark/
-
 # Compiled artifacts (deployed separately, not part of source)
 *.class
 *.jar
