@@ -1,4 +1,8 @@
-# Server runtime — never commit
+# mcplugin — server runtime, build outputs, and scratch files
+# Only the source files (StarStack.java, SkinsRestorerBridge.java, plugin.yml, .gitignore)
+# are tracked.
+
+# Paper server runtime
 world/
 plugins/
 cache/
@@ -17,6 +21,8 @@ commands.yml
 whitelist.json
 usercache.json
 main_city_territories.dat
+.paper/
+config/
 
 # Build outputs
 build/
@@ -28,11 +34,11 @@ stub-src/
 stub-translation.jar
 test-build/
 
-# Compiled artifacts — never commit (they're in the deployed plugin jar already)
+# Compiled artifacts — never commit (deployed as StarStack.jar)
 *.class
 *.jar
 
-# Test scratch files
+# Scratch / test files
 Mini.java
 Mini2.java
 Mini3.java
@@ -41,15 +47,17 @@ Mini5.java
 Test.java
 TestMini.java
 test-src.java
+test-src/
 test/
 helpers/
+compile-test.bat
 
 # Logs and stray files
+*.log
 err.log
 out.txt
 javac-stderr.log
 javac-stdout.log
-compile-test.bat
 
 # Backups
 *.bak

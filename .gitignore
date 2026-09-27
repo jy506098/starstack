@@ -50,7 +50,27 @@ dist/
 *.spec.bak
 
 # Unrelated tooling present in the project root
-mc/
-spark/
 图标.ico
 图标.png
+
+# MC server — build tooling + runtime, never commit
+mc/
+BuildData/
+BuildTools.jar
+BuildTools.log.txt
+apache-maven-3.9.6/
+authlib-injector.jar
+authlib-injector.log
+bundler/
+bundler-cli/
+spark/
+
+# Compiled artifacts (deployed separately, not part of source)
+*.class
+*.jar
+!app/desktop_launcher*.bat
+!app/desktop_launcher*.sh
+
+# Backups and scratch
+*.bak
+*.orig
