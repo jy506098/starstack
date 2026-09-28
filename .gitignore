@@ -54,7 +54,8 @@ dist/
 *.jar
 !app/desktop_launcher*.bat
 !app/desktop_launcher*.sh
-!mc/plugins/StarStack.jar
+!mcplugin/StarStack.jar
+!mcplugin/StarStackmc.jar
 
 # Backups and scratch
 *.bak

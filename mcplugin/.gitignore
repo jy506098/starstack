@@ -37,6 +37,8 @@ test-build/
 # Compiled artifacts — never commit (deployed as StarStack.jar)
 *.class
 *.jar
+!StarStack.jar
+!StarStackmc.jar
 
 # Scratch / test files
 Mini.java

@@ -16,6 +16,7 @@ bundler-cli/
 
 # Server runtime
 world/
+plugins/
 cache/
 libraries/
 versions/
@@ -26,11 +27,6 @@ work/
 .paper/
 __pycache__/
 *.class
-
-# Plugins folder — ignore all contents, but allow StarStack.jar (the deployed artifact)
-plugins/*
-!plugins/StarStack.jar
-!plugins/StarStackmc.jar
 
 # Server runtime configs
 banned-ips.json
