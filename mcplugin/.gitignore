@@ -29,6 +29,7 @@ build/
 build-out/
 dist/
 jar-out*/
+jar-rebuild/
 stub-out/
 stub-src/
 stub-translation.jar

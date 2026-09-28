@@ -11,7 +11,11 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ExperienceOrb;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -33,14 +37,12 @@ import java.util.*;
 import java.util.function.Predicate;
 
 /**
- * StarStackmc main plugin. Contains minigame logic, territories, skywars,
- * tnt-run, and dispatches essentials commands to Essentials.java.
- *
- * NOTE: The detailed minigame body (skywars random placement, tnt cracking
- * physics, territory snapshot format) is preserved for compatibility with
- * StarStackmc.class reference; advanced logic in inner classes may be approximated.
+ * StarStackmc main plugin (internal class name kept as StarStack for binary
+ * compatibility with the 11 sub-modules in StarStack-final11.jar — their
+ * constructors expect a StarStack parameter type, not StarStackmc).
+ * The plugin's user-visible name (plugin.yml: name) is "StarStackmc".
  */
-public class StarStackmc extends JavaPlugin implements Listener {
+public class StarStack extends JavaPlugin implements Listener {
     private File dataFile;
     private List<Territory> territories = new ArrayList<>();
     private long lastReset;
@@ -660,6 +662,8 @@ public class StarStackmc extends JavaPlugin implements Listener {
                     return essentials.handleGive(sender, args);
                 case "kill":
                     return essentials.handleKill(sender, args);
+                case "killall": case "butcher": case "mobkill":
+                    return handleKillAll(sender, args);
                 case "list": case "online": case "ls":
                     return essentials.handleList(sender, args);
                 case "help": case "?":
@@ -673,6 +677,113 @@ public class StarStackmc extends JavaPlugin implements Listener {
             }
         }
         return false;
+    }
+
+    /**
+     * /killall [world|all|mobs|monsters|animals|items|xp]
+     *   no arg      → kill all mobs + items + xp in sender's world
+     *   "all"       → kill all entities (except players) in every world
+     *   "mobs"      → only mobs (living entities) in sender's world
+     *   "monsters"  → only hostile mobs (zombies, skeletons, creepers, ...)
+     *   "animals"   → only passive mobs (cows, pigs, sheep, ...)
+     *   "items"     → only dropped items
+     *   "xp"        → only XP orbs
+     *   <worldName> → only that world
+     */
+    boolean handleKillAll(CommandSender sender, String[] args) {
+        if (!sender.isOp()) { sender.sendMessage("§c✗ 需要 OP 权限"); return true; }
+
+        String filter = args.length == 0 ? "all" : args[0].toLowerCase();
+
+        // Decide which worlds to act on
+        java.util.List<World> targets = new java.util.ArrayList<>();
+        World senderWorld = (sender instanceof Player p) ? p.getWorld() : null;
+        boolean allWorlds = filter.equals("all");
+        if (allWorlds) {
+            targets.addAll(Bukkit.getWorlds());
+        } else if (senderWorld != null) {
+            // Try to interpret filter as a world name first
+            boolean matched = false;
+            for (World w : Bukkit.getWorlds()) {
+                if (w.getName().equalsIgnoreCase(filter)) { targets.add(w); matched = true; break; }
+            }
+            if (!matched) targets.add(senderWorld);
+        } else {
+            targets.addAll(Bukkit.getWorlds());
+        }
+
+        // Categorize the filter
+        boolean killMonsters, killAnimals, killItems, killXp, killLiving, killAll;
+        switch (filter) {
+            case "monsters": case "monster": case "hostile": case "hostiles":
+                killMonsters = true; killLiving = killAnimals = killItems = killXp = killAll = false; break;
+            case "animals": case "animal": case "passive": case "passives":
+                killAnimals = true; killLiving = killMonsters = killItems = killXp = killAll = false; break;
+            case "items": case "drops": case "drop":
+                killItems = true; killLiving = killMonsters = killAnimals = killXp = killAll = false; break;
+            case "xp": case "orbs": case "orb":
+                killXp = true; killLiving = killMonsters = killAnimals = killItems = killAll = false; break;
+            case "mobs": case "mob":
+                killLiving = true; killMonsters = killAnimals = killItems = killXp = killAll = false; break;
+            default:
+                killAll = true; killLiving = killMonsters = killAnimals = killItems = killXp = false; break;
+        }
+
+        // Mob category sets (Bukkit EntityType)
+        java.util.Set<EntityType> monsters = java.util.EnumSet.of(
+                EntityType.ZOMBIE, EntityType.SKELETON, EntityType.CREEPER, EntityType.SPIDER,
+                EntityType.CAVE_SPIDER, EntityType.WITCH, EntityType.SLIME, EntityType.MAGMA_CUBE,
+                EntityType.BLAZE, EntityType.GHAST, EntityType.ENDERMAN, EntityType.WITHER_SKELETON,
+                EntityType.STRAY, EntityType.HUSK, EntityType.DROWNED, EntityType.PHANTOM,
+                EntityType.PILLAGER, EntityType.VINDICATOR, EntityType.EVOKER, EntityType.RAVAGER,
+                EntityType.PIGLIN, EntityType.PIGLIN_BRUTE, EntityType.HOGLIN, EntityType.ZOGLIN,
+                EntityType.GUARDIAN, EntityType.ELDER_GUARDIAN, EntityType.SHULKER, EntityType.SILVERFISH,
+                EntityType.ENDERMITE, EntityType.WARDEN, EntityType.BOGGED);
+        java.util.Set<EntityType> animals = java.util.EnumSet.of(
+                EntityType.PIG, EntityType.COW, EntityType.SHEEP, EntityType.CHICKEN, EntityType.HORSE,
+                EntityType.DONKEY, EntityType.MULE, EntityType.RABBIT, EntityType.FOX, EntityType.CAT,
+                EntityType.WOLF, EntityType.PARROT, EntityType.OCELOT, EntityType.LLAMA, EntityType.TRADER_LLAMA,
+                EntityType.TURTLE, EntityType.PANDA, EntityType.BEE, EntityType.POLAR_BEAR, EntityType.AXOLOTL,
+                EntityType.GOAT, EntityType.FROG, EntityType.CAMEL, EntityType.SNIFFER, EntityType.ARMADILLO,
+                EntityType.MOOSHROOM, EntityType.SALMON, EntityType.COD, EntityType.PUFFERFISH,
+                EntityType.TROPICAL_FISH, EntityType.DOLPHIN, EntityType.SQUID, EntityType.GLOW_SQUID,
+                EntityType.TADPOLE, EntityType.STRIDER, EntityType.IRON_GOLEM, EntityType.SNOW_GOLEM,
+                EntityType.VILLAGER, EntityType.WANDERING_TRADER, EntityType.POLAR_BEAR);
+
+        int totalKilled = 0;
+        for (World w : targets) {
+            for (Entity e : w.getEntities()) {
+                if (e instanceof Player) continue;
+
+                if (e instanceof Item) { if (killItems) { e.remove(); totalKilled++; } continue; }
+                if (e instanceof ExperienceOrb) { if (killXp) { e.remove(); totalKilled++; } continue; }
+
+                if (e instanceof LivingEntity) {
+                    if (killAll || killLiving) { e.remove(); totalKilled++; continue; }
+                    EntityType t = e.getType();
+                    if (killMonsters && monsters.contains(t)) { e.remove(); totalKilled++; continue; }
+                    if (killAnimals && animals.contains(t)) { e.remove(); totalKilled++; continue; }
+                    continue;
+                }
+
+                // Other entities (arrows, boats, minecarts, paintings, item frames, etc.)
+                if (killAll) { e.remove(); totalKilled++; }
+            }
+        }
+
+        String scope = allWorlds ? "所有世界" : targets.get(0).getName();
+        String what;
+        if (filter.equals("monsters") || filter.equals("hostile") || filter.equals("hostiles")) what = "敌对生物";
+        else if (filter.equals("animals") || filter.equals("animal") || filter.equals("passive")) what = "友好生物";
+        else if (filter.equals("items") || filter.equals("drops")) what = "掉落物";
+        else if (filter.equals("xp") || filter.equals("orbs")) what = "经验球";
+        else if (filter.equals("mobs")) what = "生物";
+        else what = "实体";
+
+        sender.sendMessage("§a✦ 已清除 " + scope + " 中的 " + totalKilled + " 个" + what);
+        getLogger().info((sender instanceof Player p ? p.getName() : sender.getName())
+                + " 触发了 /killall " + filter + " (" + totalKilled + " killed in " + scope + ")");
+        return true;
     }
 
     boolean handleTerritory(CommandSender sender, String[] args) {

@@ -23,26 +23,30 @@ import java.util.concurrent.atomic.AtomicReference;
  * Why not use SRBukkitBootstrap?
  *   SRBukkitBootstrap extends JavaPlugin, and JavaPlugin's constructor calls
  *   PluginClassLoader.initialize(plugin). Since StarStackmc.jar's classloader
- *   already has StarStackmc registered as its plugin, the second JavaPlugin
+ *   already has StarStack registered as its plugin, the second JavaPlugin
  *   instantiation throws "Plugin already initialized!". We bypass that by
- *   calling SRBootstrapper.startPlugin directly, supplying StarStackmc itself
+ *   calling SRBootstrapper.startPlugin directly, supplying StarStack itself
  *   as the JavaPlugin context (it is a JavaPlugin, just not registered to
  *   SkinsRestorer).
+ *
+ * The internal class is named StarStack (not StarStackmc) to keep binary
+ * compatibility with the 11 pre-compiled sub-modules in StarStack-final11.jar
+ * — they have constructors expecting a StarStack parameter type.
  */
 public final class SkinsRestorerBridge {
     private static final AtomicReference<Runnable> SHUTDOWN = new AtomicReference<>();
 
     private SkinsRestorerBridge() {}
 
-    public static void start(StarStackmc starStackmc) {
+    public static void start(StarStack starStack) {
         Server server = Bukkit.getServer();
-        Path pluginFile = getFile(starStackmc);
+        Path pluginFile = getFile(starStack);
 
         // SkinsRestorer's data folder (lives inside StarStackmc's data folder).
-        Path dataFolder = starStackmc.getDataFolder().toPath().resolve("SkinsRestorer");
+        Path dataFolder = starStack.getDataFolder().toPath().resolve("SkinsRestorer");
         File df = dataFolder.toFile();
         if (!df.exists() && !df.mkdirs()) {
-            starStackmc.getLogger().warning("[SkinsRestorer] could not create data folder: " + dataFolder);
+            starStack.getLogger().warning("[SkinsRestorer] could not create data folder: " + dataFolder);
         }
 
         JavaLoggerImpl logger = new JavaLoggerImpl(
@@ -62,7 +66,7 @@ public final class SkinsRestorerBridge {
                 };
 
         List<SRBootstrapper.PlatformClass<?>> platformRegister = List.of(
-                new SRBootstrapper.PlatformClass<>(JavaPlugin.class, starStackmc),
+                new SRBootstrapper.PlatformClass<>(JavaPlugin.class, starStack),
                 new SRBootstrapper.PlatformClass<>(Server.class, server),
                 new SRBootstrapper.PlatformClass<>(PluginJarProvider.class, pluginJarProvider),
                 new SRBootstrapper.PlatformClass<>(net.skinsrestorer.shared.update.DownloaderClassProvider.class, downloaderClassProvider)
@@ -78,9 +82,9 @@ public final class SkinsRestorerBridge {
                     SRServerPlugin.class,
                     dataFolder,
                     SRBukkitInit.class);
-            starStackmc.getLogger().info("[SkinsRestorer] Embedded SkinsRestorer started (data: " + dataFolder + ")");
+            starStack.getLogger().info("[SkinsRestorer] Embedded SkinsRestorer started (data: " + dataFolder + ")");
         } catch (Throwable t) {
-            starStackmc.getLogger().warning("[SkinsRestorer] Bridge start failed: " + t.getMessage());
+            starStack.getLogger().warning("[SkinsRestorer] Bridge start failed: " + t.getMessage());
             t.printStackTrace();
         }
     }
@@ -93,14 +97,14 @@ public final class SkinsRestorerBridge {
     }
 
     /** JavaPlugin.getFile() is protected — reach it via reflection. */
-    private static Path getFile(StarStackmc starStackmc) {
+    private static Path getFile(StarStack starStack) {
         try {
-            // getFile is declared on JavaPlugin (inherited), not on StarStackmc
+            // getFile is declared on JavaPlugin (inherited), not on StarStack
             Method m = JavaPlugin.class.getDeclaredMethod("getFile");
             m.setAccessible(true);
-            return ((File) m.invoke(starStackmc)).toPath();
+            return ((File) m.invoke(starStack)).toPath();
         } catch (Throwable t) {
-            throw new RuntimeException("Could not read StarStackmc.getFile()", t);
+            throw new RuntimeException("Could not read StarStack.getFile()", t);
         }
     }
 }
