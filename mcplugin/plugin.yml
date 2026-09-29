@@ -1,6 +1,6 @@
 name: StarStackmc
 version: 4.0
-main: StarStackmc
+main: StarStack
 api-version: '1.21'
 commands:
     hub:
