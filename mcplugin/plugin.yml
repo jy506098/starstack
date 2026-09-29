@@ -27,6 +27,10 @@ commands:
     tnt:
         description: TNT run minigame
         usage: /tnt join|leave
+    glass:
+        description: Glass-jumping minigame (walked-on wool disappears)
+        usage: /glass join|leave
+        aliases: [jumpglass, glassjump, jump]
     register:
         description: AuthMe register
         usage: /register <password>

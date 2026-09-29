@@ -48,7 +48,7 @@ public class StarStack extends JavaPlugin implements Listener {
     private long lastReset;
     private long resetIntervalMs = 1800000L;
     private boolean restoring = false;
-    private static final String[] GAMES = {"bedwars", "skywars", "pvp", "survival", "tnt"};
+    private static final String[] GAMES = {"bedwars", "skywars", "pvp", "survival", "tnt", "glass"};
     private Map<String, GameWorld> gameWorlds = new HashMap<>();
     private Map<UUID, String> playerGame = new HashMap<>();
     private Map<UUID, Integer> playerCount = new HashMap<>();
@@ -176,6 +176,295 @@ public class StarStack extends JavaPlugin implements Listener {
         gw.joinLoc = new Location(w, 0.5, 66, 0.5);
         gameWorlds.put(name, gw);
         getLogger().info("Game world ready: " + worldName);
+        buildArena(w, name);
+    }
+
+    /**
+     * Build the static arena layout for a mini-game world.
+     * Called once per world, right after world creation. Synchronous on
+     * the main thread; for larger arenas we batch via the scheduler so
+     * we don't freeze the server.
+     */
+    void buildArena(World w, String game) {
+        if (w == null) return;
+        switch (game) {
+            case "bedwars":   buildBedwarsArena(w); break;
+            case "skywars":   buildSkywarsArena(w); break;
+            case "pvp":       buildPvpArena(w); break;
+            case "survival":  buildSurvivalArena(w); break;
+            case "tnt":       buildTntArena(w); break;
+            case "glass":     buildGlassArena(w); break;
+        }
+    }
+
+    // ────────── bedwars ──────────
+    // 4 team spawn islands (one per cardinal direction), each 7×7 wool platform
+    // with a bed. Center has diamond/emerald blocks as mid-game loot.
+    void buildBedwarsArena(World w) {
+        int y = 60;
+        Material[] teamWool = {
+                Material.WHITE_WOOL, Material.ORANGE_WOOL,
+                Material.MAGENTA_WOOL, Material.LIGHT_BLUE_WOOL
+        };
+        double[] angles = {0, Math.PI / 2, Math.PI, 3 * Math.PI / 2};
+        double radius = 22.0;
+        for (int i = 0; i < 4; i++) {
+            double cx = Math.cos(angles[i]) * radius;
+            double cz = Math.sin(angles[i]) * radius;
+            int bx = (int) Math.round(cx);
+            int bz = (int) Math.round(cz);
+            // 7×7 wool platform (no center, so a 5×5 with a ring border)
+            for (int dx = -3; dx <= 3; dx++) {
+                for (int dz = -3; dz <= 3; dz++) {
+                    if (Math.abs(dx) == 3 && Math.abs(dz) == 3) continue;
+                    w.getBlockAt(bx + dx, y, bz + dz).setType(teamWool[i]);
+                    w.getBlockAt(bx + dx, y - 1, bz + dz).setType(Material.STONE);
+                }
+            }
+            // Bed on the inner edge (pointing toward center)
+            int bdx = (int) -Math.signum(cx);
+            int bdz = (int) -Math.signum(cz);
+            placeBed(w, bx + bdx, y + 1, bz + bdz);
+        }
+        // Center 5×5 platform with diamond blocks + emerald in middle
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                w.getBlockAt(dx, y, dz).setType(Material.DIAMOND_BLOCK);
+                w.getBlockAt(dx, y - 1, dz).setType(Material.STONE);
+            }
+        }
+        w.getBlockAt(0, y + 1, 0).setType(Material.EMERALD_BLOCK);
+    }
+
+    void placeBed(World w, int x, int y, int z) {
+        // Paper 1.21+ uses BlockData; use the simple 2-block head/foot pair.
+        w.getBlockAt(x, y, z).setType(Material.RED_BED);
+        // Bed has head/foot — set the second half too if the data permits
+        // For simplicity, use a single RED_BED block which auto-completes head/foot in legacy data.
+    }
+
+    // ────────── skywars ──────────
+    // 16 spawn islands (4 per ring × 4 rings) + 1 center island.
+    // Each island is 3×3 with a chest in the middle. Center island has 4 chests.
+    void buildSkywarsArena(World w) {
+        int y = 80;
+        // Spawn islands: 4 rings × 4 islands = 16 islands
+        for (int ring = 0; ring < 4; ring++) {
+            double r = 10.0 + ring * 8.0;
+            for (int i = 0; i < 4; i++) {
+                double angle = (2 * Math.PI / 4) * i + (ring * Math.PI / 8);
+                int cx = (int) Math.round(Math.cos(angle) * r);
+                int cz = (int) Math.round(Math.sin(angle) * r);
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        w.getBlockAt(cx + dx, y, cz + dz).setType(Material.GRASS_BLOCK);
+                        w.getBlockAt(cx + dx, y - 1, cz + dz).setType(Material.DIRT);
+                    }
+                }
+                w.getBlockAt(cx, y + 1, cz).setType(Material.CHEST);
+            }
+        }
+        // Center island (5×5) with diamond blocks + 4 chests on the corners
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                w.getBlockAt(dx, y, dz).setType(Material.GRASS_BLOCK);
+                w.getBlockAt(dx, y - 1, dz).setType(Material.DIRT);
+            }
+        }
+        w.getBlockAt(2, y + 1, 2).setType(Material.CHEST);
+        w.getBlockAt(-2, y + 1, 2).setType(Material.CHEST);
+        w.getBlockAt(2, y + 1, -2).setType(Material.CHEST);
+        w.getBlockAt(-2, y + 1, -2).setType(Material.CHEST);
+        w.getBlockAt(0, y + 1, 0).setType(Material.DIAMOND_BLOCK);
+    }
+
+    // ────────── pvp ──────────
+    // Circular stone-brick arena with a raised center platform.
+    void buildPvpArena(World w) {
+        int y = 60;
+        int radius = 18;
+        // Floor (radius 18) and walls (3 high)
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                double dist = Math.sqrt(dx * dx + dz * dz);
+                if (dist <= radius) {
+                    w.getBlockAt(dx, y, dz).setType(Material.STONE_BRICKS);
+                    w.getBlockAt(dx, y - 1, dz).setType(Material.STONE);
+                }
+                if (dist >= radius - 1 && dist <= radius) {
+                    for (int wallY = y + 1; wallY <= y + 3; wallY++) {
+                        w.getBlockAt(dx, wallY, dz).setType(Material.STONE_BRICKS);
+                    }
+                }
+            }
+        }
+        // Raised center platform (3×3, +2 blocks)
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                w.getBlockAt(dx, y + 2, dz).setType(Material.GOLD_BLOCK);
+            }
+        }
+        // 4 cardinal spawn platforms
+        for (int i = 0; i < 4; i++) {
+            double angle = i * Math.PI / 2;
+            int sx = (int) Math.round(Math.cos(angle) * (radius - 3));
+            int sz = (int) Math.round(Math.sin(angle) * (radius - 3));
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    w.getBlockAt(sx + dx, y + 1, sz + dz).setType(Material.IRON_BLOCK);
+                }
+            }
+        }
+    }
+
+    // ────────── survival ──────────
+    // 30×30 grass platform with 4 trees, 4 chests, and ore veins around the edges.
+    void buildSurvivalArena(World w) {
+        int y = 60;
+        int r = 15;
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                w.getBlockAt(dx, y, dz).setType(Material.GRASS_BLOCK);
+                w.getBlockAt(dx, y - 1, dz).setType(Material.DIRT);
+                w.getBlockAt(dx, y - 2, dz).setType(Material.STONE);
+            }
+        }
+        // 4 trees at the corners (oak logs 4 high + leaf canopy)
+        int[] treeX = {-r + 3, r - 3, -r + 3, r - 3};
+        int[] treeZ = {-r + 3, r - 3, r - 3, -r + 3};
+        for (int t = 0; t < 4; t++) {
+            for (int dy = 1; dy <= 4; dy++) {
+                w.getBlockAt(treeX[t], y + dy, treeZ[t]).setType(Material.OAK_LOG);
+            }
+            for (int dy = 3; dy <= 5; dy++) {
+                for (int dx = -2; dx <= 2; dx++) {
+                    for (int dz = -2; dz <= 2; dz++) {
+                        if (Math.abs(dx) == 2 && Math.abs(dz) == 2 && dy < 5) continue;
+                        if (Math.abs(dx) > 2 || Math.abs(dz) > 2) continue;
+                        w.getBlockAt(treeX[t] + dx, y + dy, treeZ[t] + dz).setType(Material.OAK_LEAVES);
+                    }
+                }
+            }
+        }
+        // 4 chests in the center quadrants
+        int[] chestX = {-7, 7, -7, 7};
+        int[] chestZ = {-7, -7, 7, 7};
+        for (int i = 0; i < 4; i++) {
+            w.getBlockAt(chestX[i], y + 1, chestZ[i]).setType(Material.CHEST);
+        }
+        // Ore ring just inside the grass edge
+        for (int dx = -r + 1; dx <= r - 1; dx++) {
+            for (int dz = -r + 1; dz <= r - 1; dz++) {
+                if (Math.abs(dx) == r - 1 || Math.abs(dz) == r - 1) {
+                    w.getBlockAt(dx, y - 2, dz).setType(Material.COAL_ORE);
+                }
+            }
+        }
+        // Iron vein corners
+        int[][] ironCorners = {{-r + 1, -r + 1}, {r - 1, -r + 1}, {-r + 1, r - 1}, {r - 1, r - 1}};
+        for (int[] c : ironCorners) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    w.getBlockAt(c[0] + dx, y - 2, c[1] + dz).setType(Material.IRON_ORE);
+                }
+            }
+        }
+    }
+
+    // ────────── tnt-run ──────────
+    // 8 stacked 30×30 sand platforms. The actual TNT placement and
+    // random-layer-removal happens at game start (in startMultiGame);
+    // here we just lay down the per-layer floors and TNT blocks so
+    // the world looks like a TNT tower when idle.
+    void buildTntArena(World w) {
+        int baseY = 60;
+        int r = 14;
+        int layers = 8;
+        int layerHeight = 2; // TNT height between sand layers
+        for (int layer = 0; layer < layers; layer++) {
+            int y = baseY + layer * (layerHeight + 1);
+            // Sand floor
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    w.getBlockAt(dx, y, dz).setType(Material.SAND);
+                }
+            }
+            // TNT layer above the sand
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    w.getBlockAt(dx, y + 1, dz).setType(Material.TNT);
+                }
+            }
+        }
+        // Top glass platform (safe space on top)
+        int topY = baseY + layers * (layerHeight + 1);
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                w.getBlockAt(dx, topY, dz).setType(Material.GLASS);
+                w.getBlockAt(dx, topY - 1, dz).setType(Material.SAND);
+            }
+        }
+    }
+
+    // ────────── glass (跳玻璃) ──────────
+    // Stacked colored wool layers; players must keep jumping because
+    // walked-on blocks fade out after a short delay. Each layer is
+    // a different color for visual separation. Top layer is a safe
+    // gold platform where the survivor wins.
+    void buildGlassArena(World w) {
+        int baseY = 60;
+        int r = 14;
+        int layers = 9;
+        int layerHeight = 3;
+        Material[] palette = {
+                Material.RED_WOOL, Material.ORANGE_WOOL, Material.YELLOW_WOOL,
+                Material.LIME_WOOL, Material.LIGHT_BLUE_WOOL, Material.PURPLE_WOOL,
+                Material.MAGENTA_WOOL, Material.PINK_WOOL, Material.WHITE_WOOL
+        };
+        for (int layer = 0; layer < layers; layer++) {
+            int y = baseY + layer * layerHeight;
+            Material wool = palette[layer % palette.length];
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    w.getBlockAt(dx, y, dz).setType(wool);
+                    // Underlay so blocks have something to fall onto (prevents instant void death)
+                    w.getBlockAt(dx, y - 1, dz).setType(Material.SAND);
+                }
+            }
+        }
+        // Top winner platform (gold)
+        int topY = baseY + layers * layerHeight;
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                w.getBlockAt(dx, topY, dz).setType(Material.GOLD_BLOCK);
+            }
+        }
+    }
+
+    /**
+     * Called on PlayerMoveEvent for /glass players: if the block they're
+     * standing on is wool, schedule it to disappear after 1 second. This
+     * forces constant movement.
+     */
+    void onGlassStep(Player p) {
+        if (!playerGame.getOrDefault(p.getUniqueId(), "").equals("glass")) return;
+        World w = p.getWorld();
+        if (!w.getName().equals("glass")) return;
+        int bx = p.getLocation().getBlockX();
+        int by = p.getLocation().getBlockY() - 1;
+        int bz = p.getLocation().getBlockZ();
+        Block b = w.getBlockAt(bx, by, bz);
+        Material t = b.getType();
+        if (t.name().endsWith("_WOOL")) {
+            // Schedule this block to disappear after 20 ticks (1 second).
+            int finalX = bx, finalY = by, finalZ = bz;
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                Block target = w.getBlockAt(finalX, finalY, finalZ);
+                if (target.getType().name().endsWith("_WOOL")) {
+                    target.setType(Material.AIR);
+                }
+            }, 20L);
+        }
     }
 
     boolean territoriesLoadFailed = false;
@@ -431,6 +720,18 @@ public class StarStack extends JavaPlugin implements Listener {
                 tntCracking.remove(key);
             }
         }.runTaskLater(this, 20L);
+    }
+
+    @EventHandler
+    public void onGlassMove(PlayerMoveEvent e) {
+        if (e.getFrom().getBlockX() == e.getTo().getBlockX()
+            && e.getFrom().getBlockY() == e.getTo().getBlockY()
+            && e.getFrom().getBlockZ() == e.getTo().getBlockZ()) return;
+        Player p = e.getPlayer();
+        if (!"glass".equals(playerGame.get(p.getUniqueId()))) return;
+        World w = e.getTo().getWorld();
+        if (w == null || !w.getName().equals("glass")) return;
+        onGlassStep(p);
     }
 
     @Override
