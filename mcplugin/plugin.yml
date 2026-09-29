@@ -707,6 +707,10 @@ commands:
         description: Kill all mobs/entities in the world (or specified world)
         usage: /killall [world|all|mobs|monsters|animals|passive|hostile|items|xp]
         aliases: [butcher, kill mobs, mobkill, clear mobs, clear mobs all]
+    godset:
+        description: Give yourself a full set of max-enchanted Netherite gear
+        usage: /godset
+        aliases: [maxkit, netheritekit, god gear]
     list:
         description: List online players
         usage: /list

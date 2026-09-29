@@ -11,6 +11,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
@@ -24,6 +25,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -772,6 +775,9 @@ public class StarStack extends JavaPlugin implements Listener {
         if (cmd.equalsIgnoreCase("territory")) {
             return handleTerritory(sender, args);
         }
+        if (cmd.equalsIgnoreCase("godset") || cmd.equalsIgnoreCase("maxkit") || cmd.equalsIgnoreCase("netheritekit")) {
+            return handleGodSet(sender);
+        }
         // AuthMe commands
         if (cmd.equalsIgnoreCase("register")) return authMe.handleRegister(sender, args);
         if (cmd.equalsIgnoreCase("login")) return authMe.handleLogin(sender, args);
@@ -1093,6 +1099,127 @@ public class StarStack extends JavaPlugin implements Listener {
         getLogger().info((sender instanceof Player p ? p.getName() : sender.getName())
                 + " 触发了 /killall " + filter + " (" + totalKilled + " killed in " + scope + ")");
         return true;
+    }
+
+    boolean handleGodSet(CommandSender sender) {
+        if (!sender.isOp()) { sender.sendMessage("§c✗ 需要 OP 权限"); return true; }
+        if (!(sender instanceof Player p)) { sender.sendMessage("Only players!"); return true; }
+
+        ItemStack[] kit = netheriteMaxKit();
+        for (ItemStack item : kit) {
+            if (item == null) continue;
+            java.util.HashMap<Integer, ItemStack> overflow = p.getInventory().addItem(item);
+            for (ItemStack drop : overflow.values()) p.getWorld().dropItemNaturally(p.getLocation(), drop);
+        }
+        p.sendMessage("§a✦ 已发放全套满附魔下界合金装备（9 件）");
+        getLogger().info(p.getName() + " 触发了 /godset");
+        return true;
+    }
+
+    /**
+     * Full Netherite toolkit, each piece with the strongest practical
+     * enchantment set at max level. Mutually-exclusive enchantment
+     * variants are picked one per slot (e.g. Protection IV instead of
+     * all 4 protection types; Sharpness V instead of Smite/Bane).
+     */
+    ItemStack[] netheriteMaxKit() {
+        // Armor — Protection IV, Mending, Unbreaking III, Thorns III, etc.
+        ItemStack helmet = enchant(new ItemStack(Material.NETHERITE_HELMET),
+                Enchantment.PROTECTION, 4,
+                Enchantment.RESPIRATION, 4,
+                Enchantment.AQUA_AFFINITY, 1,
+                Enchantment.THORNS, 3,
+                Enchantment.UNBREAKING, 3,
+                Enchantment.MENDING, 1);
+        ItemStack chest = enchant(new ItemStack(Material.NETHERITE_CHESTPLATE),
+                Enchantment.PROTECTION, 4,
+                Enchantment.THORNS, 3,
+                Enchantment.UNBREAKING, 3,
+                Enchantment.MENDING, 1);
+        ItemStack legs = enchant(new ItemStack(Material.NETHERITE_LEGGINGS),
+                Enchantment.PROTECTION, 4,
+                Enchantment.THORNS, 3,
+                Enchantment.UNBREAKING, 3,
+                Enchantment.MENDING, 1,
+                Enchantment.SWIFT_SNEAK, 3);
+        ItemStack boots = enchant(new ItemStack(Material.NETHERITE_BOOTS),
+                Enchantment.PROTECTION, 4,
+                Enchantment.FEATHER_FALLING, 4,
+                Enchantment.DEPTH_STRIDER, 3,
+                Enchantment.SOUL_SPEED, 3,
+                Enchantment.UNBREAKING, 3,
+                Enchantment.MENDING, 1,
+                Enchantment.THORNS, 3);
+
+        // Sword — Sharpness V, Looting III, Sweeping Edge III, Fire Aspect II, Knockback II, Unbreaking III, Mending
+        ItemStack sword = enchant(new ItemStack(Material.NETHERITE_SWORD),
+                Enchantment.SHARPNESS, 5,
+                Enchantment.LOOTING, 3,
+                Enchantment.SWEEPING_EDGE, 3,
+                Enchantment.FIRE_ASPECT, 2,
+                Enchantment.KNOCKBACK, 2,
+                Enchantment.UNBREAKING, 3,
+                Enchantment.MENDING, 1);
+
+        // Pickaxe — Efficiency V, Fortune III, Unbreaking III, Mending
+        ItemStack pick = enchant(new ItemStack(Material.NETHERITE_PICKAXE),
+                Enchantment.EFFICIENCY, 5,
+                Enchantment.FORTUNE, 3,
+                Enchantment.UNBREAKING, 3,
+                Enchantment.MENDING, 1);
+
+        // Axe — Efficiency V, Sharpness V, Fortune III (logs), Unbreaking III, Mending
+        ItemStack axe = enchant(new ItemStack(Material.NETHERITE_AXE),
+                Enchantment.EFFICIENCY, 5,
+                Enchantment.SHARPNESS, 5,
+                Enchantment.FORTUNE, 3,
+                Enchantment.UNBREAKING, 3,
+                Enchantment.MENDING, 1);
+
+        // Shovel — Efficiency V, Fortune III, Unbreaking III, Mending
+        ItemStack shovel = enchant(new ItemStack(Material.NETHERITE_SHOVEL),
+                Enchantment.EFFICIENCY, 5,
+                Enchantment.FORTUNE, 3,
+                Enchantment.UNBREAKING, 3,
+                Enchantment.MENDING, 1);
+
+        // Hoe — Efficiency V, Fortune III (crops), Unbreaking III, Mending
+        ItemStack hoe = enchant(new ItemStack(Material.NETHERITE_HOE),
+                Enchantment.EFFICIENCY, 5,
+                Enchantment.FORTUNE, 3,
+                Enchantment.UNBREAKING, 3,
+                Enchantment.MENDING, 1);
+
+        return new ItemStack[] { helmet, chest, legs, boots, sword, pick, axe, shovel, hoe };
+    }
+
+    /**
+     * Helper: build an ItemStack with the given enchantments applied at the
+     * given levels. Paired arguments after the first ItemStack: (Enchantment, level) × N.
+     */
+    ItemStack enchant(ItemStack base, Object... enchants) {
+        if ((enchants.length & 1) != 0) throw new IllegalArgumentException("enchant() needs pairs");
+        for (int i = 0; i < enchants.length; i += 2) {
+            Enchantment e = (Enchantment) enchants[i];
+            int lvl = (Integer) enchants[i + 1];
+            base.addUnsafeEnchantment(e, lvl);
+        }
+        ItemMeta meta = base.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§6§l" + prettyName(base.getType()) + " §7(满附魔)");
+            base.setItemMeta(meta);
+        }
+        return base;
+    }
+
+    String prettyName(Material m) {
+        String n = m.name().toLowerCase().replace('_', ' ');
+        StringBuilder sb = new StringBuilder();
+        for (String w : n.split(" ")) {
+            if (w.isEmpty()) continue;
+            sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1)).append(' ');
+        }
+        return sb.toString().trim();
     }
 
     boolean handleTerritory(CommandSender sender, String[] args) {
