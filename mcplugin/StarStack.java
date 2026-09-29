@@ -167,7 +167,15 @@ public class StarStack extends JavaPlugin implements Listener {
                 w.setGameRule(GameRule.KEEP_INVENTORY, true);
                 w.setGameRule(GameRule.MOB_GRIEFING, false);
                 w.setTime(6000L);
+                w.setStorm(false);
+                w.setThundering(false);
             }
+        } else {
+            // World already existed from an older run; clear weather and
+            // re-anchor time so the arena is visible on first load.
+            w.setStorm(false);
+            w.setThundering(false);
+            w.setTime(6000L);
         }
         GameWorld gw = new GameWorld();
         gw.name = name;
