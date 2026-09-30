@@ -1117,78 +1117,110 @@ public class StarStack extends JavaPlugin implements Listener {
     }
 
     /**
-     * Full Netherite toolkit, each piece with the strongest practical
-     * enchantment set at max level. Mutually-exclusive enchantment
-     * variants are picked one per slot (e.g. Protection IV instead of
-     * all 4 protection types; Sharpness V instead of Smite/Bane).
+     * Full Netherite toolkit, each piece with EVERY applicable enchantment
+     * applied at level 32767 (the classic "infinity" level — far above
+     * vanilla max). addUnsafeEnchantment() bypasses both the level cap
+     * and the mutually-exclusive restrictions (so e.g. all 4 protection
+     * types can co-exist on one chestplate, and the sword gets Sharpness
+     * + Smite + Bane simultaneously).
      */
+    static final int OP_LEVEL = 32767;
+
     ItemStack[] netheriteMaxKit() {
-        // Armor — Protection IV, Mending, Unbreaking III, Thorns III, etc.
+        // Helmet — every armor enchant (all 4 protection + aqua + resp + thorns + unbreaking + mending + soul speed)
         ItemStack helmet = enchant(new ItemStack(Material.NETHERITE_HELMET),
-                Enchantment.PROTECTION, 4,
-                Enchantment.RESPIRATION, 4,
-                Enchantment.AQUA_AFFINITY, 1,
-                Enchantment.THORNS, 3,
-                Enchantment.UNBREAKING, 3,
-                Enchantment.MENDING, 1);
+                Enchantment.PROTECTION,           OP_LEVEL,
+                Enchantment.BLAST_PROTECTION,     OP_LEVEL,
+                Enchantment.FIRE_PROTECTION,      OP_LEVEL,
+                Enchantment.PROJECTILE_PROTECTION,OP_LEVEL,
+                Enchantment.RESPIRATION,          OP_LEVEL,
+                Enchantment.AQUA_AFFINITY,        OP_LEVEL,
+                Enchantment.THORNS,               OP_LEVEL,
+                Enchantment.UNBREAKING,           OP_LEVEL,
+                Enchantment.MENDING,              OP_LEVEL,
+                Enchantment.SOUL_SPEED,           OP_LEVEL);
+
+        // Chestplate — all 4 protection + thorns + unbreaking + mending
         ItemStack chest = enchant(new ItemStack(Material.NETHERITE_CHESTPLATE),
-                Enchantment.PROTECTION, 4,
-                Enchantment.THORNS, 3,
-                Enchantment.UNBREAKING, 3,
-                Enchantment.MENDING, 1);
+                Enchantment.PROTECTION,           OP_LEVEL,
+                Enchantment.BLAST_PROTECTION,     OP_LEVEL,
+                Enchantment.FIRE_PROTECTION,      OP_LEVEL,
+                Enchantment.PROJECTILE_PROTECTION,OP_LEVEL,
+                Enchantment.THORNS,               OP_LEVEL,
+                Enchantment.UNBREAKING,           OP_LEVEL,
+                Enchantment.MENDING,              OP_LEVEL);
+
+        // Leggings — all 4 protection + swift sneak + thorns + unbreaking + mending + soul speed
         ItemStack legs = enchant(new ItemStack(Material.NETHERITE_LEGGINGS),
-                Enchantment.PROTECTION, 4,
-                Enchantment.THORNS, 3,
-                Enchantment.UNBREAKING, 3,
-                Enchantment.MENDING, 1,
-                Enchantment.SWIFT_SNEAK, 3);
+                Enchantment.PROTECTION,           OP_LEVEL,
+                Enchantment.BLAST_PROTECTION,     OP_LEVEL,
+                Enchantment.FIRE_PROTECTION,      OP_LEVEL,
+                Enchantment.PROJECTILE_PROTECTION,OP_LEVEL,
+                Enchantment.SWIFT_SNEAK,          OP_LEVEL,
+                Enchantment.THORNS,               OP_LEVEL,
+                Enchantment.UNBREAKING,           OP_LEVEL,
+                Enchantment.MENDING,              OP_LEVEL,
+                Enchantment.SOUL_SPEED,           OP_LEVEL);
+
+        // Boots — all 4 protection + feather falling + depth strider + soul speed + thorns + unbreaking + mending
         ItemStack boots = enchant(new ItemStack(Material.NETHERITE_BOOTS),
-                Enchantment.PROTECTION, 4,
-                Enchantment.FEATHER_FALLING, 4,
-                Enchantment.DEPTH_STRIDER, 3,
-                Enchantment.SOUL_SPEED, 3,
-                Enchantment.UNBREAKING, 3,
-                Enchantment.MENDING, 1,
-                Enchantment.THORNS, 3);
+                Enchantment.PROTECTION,           OP_LEVEL,
+                Enchantment.BLAST_PROTECTION,     OP_LEVEL,
+                Enchantment.FIRE_PROTECTION,      OP_LEVEL,
+                Enchantment.PROJECTILE_PROTECTION,OP_LEVEL,
+                Enchantment.FEATHER_FALLING,      OP_LEVEL,
+                Enchantment.DEPTH_STRIDER,        OP_LEVEL,
+                Enchantment.SOUL_SPEED,           OP_LEVEL,
+                Enchantment.THORNS,               OP_LEVEL,
+                Enchantment.UNBREAKING,           OP_LEVEL,
+                Enchantment.MENDING,              OP_LEVEL);
 
-        // Sword — Sharpness V, Looting III, Sweeping Edge III, Fire Aspect II, Knockback II, Unbreaking III, Mending
+        // Sword — Sharpness + Smite + Bane (all three coexist) + Looting + Sweeping + Fire Aspect + Knockback + Unbreaking + Mending
         ItemStack sword = enchant(new ItemStack(Material.NETHERITE_SWORD),
-                Enchantment.SHARPNESS, 5,
-                Enchantment.LOOTING, 3,
-                Enchantment.SWEEPING_EDGE, 3,
-                Enchantment.FIRE_ASPECT, 2,
-                Enchantment.KNOCKBACK, 2,
-                Enchantment.UNBREAKING, 3,
-                Enchantment.MENDING, 1);
+                Enchantment.SHARPNESS,      OP_LEVEL,
+                Enchantment.SMITE,          OP_LEVEL,
+                Enchantment.BANE_OF_ARTHROPODS, OP_LEVEL,
+                Enchantment.LOOTING,        OP_LEVEL,
+                Enchantment.SWEEPING_EDGE,  OP_LEVEL,
+                Enchantment.FIRE_ASPECT,    OP_LEVEL,
+                Enchantment.KNOCKBACK,      OP_LEVEL,
+                Enchantment.UNBREAKING,     OP_LEVEL,
+                Enchantment.MENDING,        OP_LEVEL);
 
-        // Pickaxe — Efficiency V, Fortune III, Unbreaking III, Mending
+        // Pickaxe — Efficiency + Fortune + Silk Touch + Unbreaking + Mending
         ItemStack pick = enchant(new ItemStack(Material.NETHERITE_PICKAXE),
-                Enchantment.EFFICIENCY, 5,
-                Enchantment.FORTUNE, 3,
-                Enchantment.UNBREAKING, 3,
-                Enchantment.MENDING, 1);
+                Enchantment.EFFICIENCY, OP_LEVEL,
+                Enchantment.FORTUNE,    OP_LEVEL,
+                Enchantment.SILK_TOUCH, OP_LEVEL,
+                Enchantment.UNBREAKING, OP_LEVEL,
+                Enchantment.MENDING,    OP_LEVEL);
 
-        // Axe — Efficiency V, Sharpness V, Fortune III (logs), Unbreaking III, Mending
+        // Axe — Efficiency + Sharpness + Smite + Bane + Fortune + Silk Touch + Unbreaking + Mending
         ItemStack axe = enchant(new ItemStack(Material.NETHERITE_AXE),
-                Enchantment.EFFICIENCY, 5,
-                Enchantment.SHARPNESS, 5,
-                Enchantment.FORTUNE, 3,
-                Enchantment.UNBREAKING, 3,
-                Enchantment.MENDING, 1);
+                Enchantment.EFFICIENCY, OP_LEVEL,
+                Enchantment.SHARPNESS,  OP_LEVEL,
+                Enchantment.SMITE,      OP_LEVEL,
+                Enchantment.BANE_OF_ARTHROPODS, OP_LEVEL,
+                Enchantment.FORTUNE,    OP_LEVEL,
+                Enchantment.SILK_TOUCH, OP_LEVEL,
+                Enchantment.UNBREAKING, OP_LEVEL,
+                Enchantment.MENDING,    OP_LEVEL);
 
-        // Shovel — Efficiency V, Fortune III, Unbreaking III, Mending
+        // Shovel — Efficiency + Fortune + Silk Touch + Unbreaking + Mending
         ItemStack shovel = enchant(new ItemStack(Material.NETHERITE_SHOVEL),
-                Enchantment.EFFICIENCY, 5,
-                Enchantment.FORTUNE, 3,
-                Enchantment.UNBREAKING, 3,
-                Enchantment.MENDING, 1);
+                Enchantment.EFFICIENCY, OP_LEVEL,
+                Enchantment.FORTUNE,    OP_LEVEL,
+                Enchantment.SILK_TOUCH, OP_LEVEL,
+                Enchantment.UNBREAKING, OP_LEVEL,
+                Enchantment.MENDING,    OP_LEVEL);
 
-        // Hoe — Efficiency V, Fortune III (crops), Unbreaking III, Mending
+        // Hoe — Efficiency + Fortune + Silk Touch + Unbreaking + Mending
         ItemStack hoe = enchant(new ItemStack(Material.NETHERITE_HOE),
-                Enchantment.EFFICIENCY, 5,
-                Enchantment.FORTUNE, 3,
-                Enchantment.UNBREAKING, 3,
-                Enchantment.MENDING, 1);
+                Enchantment.EFFICIENCY, OP_LEVEL,
+                Enchantment.FORTUNE,    OP_LEVEL,
+                Enchantment.SILK_TOUCH, OP_LEVEL,
+                Enchantment.UNBREAKING, OP_LEVEL,
+                Enchantment.MENDING,    OP_LEVEL);
 
         return new ItemStack[] { helmet, chest, legs, boots, sword, pick, axe, shovel, hoe };
     }
