@@ -12,6 +12,12 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
+import net.skinsrestorer.api.SkinsRestorerProvider;
+import net.skinsrestorer.api.property.SkinApplier;
+import net.skinsrestorer.api.property.SkinIdentifier;
+import net.skinsrestorer.api.property.SkinProperty;
+import net.skinsrestorer.api.property.SkinVariant;
+import net.skinsrestorer.api.exception.DataRequestException;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
@@ -25,6 +31,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.generator.ChunkGenerator;
@@ -778,6 +786,15 @@ public class StarStack extends JavaPlugin implements Listener {
         if (cmd.equalsIgnoreCase("godset") || cmd.equalsIgnoreCase("maxkit") || cmd.equalsIgnoreCase("netheritekit")) {
             return handleGodSet(sender);
         }
+        // SkinsRestorer commands (the bridge bypasses SRBukkitBootstrap, so
+        // SkinsRestorer's own command classes are not registered with Bukkit —
+        // we route them ourselves via its public API).
+        if (cmd.equalsIgnoreCase("skin") || cmd.equalsIgnoreCase("sr") || cmd.equalsIgnoreCase("skinsrestorer")) {
+            return handleSkin(sender, args);
+        }
+        if (cmd.equalsIgnoreCase("skins")) {
+            return handleSkins(sender);
+        }
         // AuthMe commands
         if (cmd.equalsIgnoreCase("register")) return authMe.handleRegister(sender, args);
         if (cmd.equalsIgnoreCase("login")) return authMe.handleLogin(sender, args);
@@ -1252,6 +1269,165 @@ public class StarStack extends JavaPlugin implements Listener {
             sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1)).append(' ');
         }
         return sb.toString().trim();
+    }
+
+    /**
+     * /skin <subcommand> [args...]
+     *   set <name>      set skin by Mojang/player name
+     *   url <url>       set skin from image URL
+     *   clear           restore default skin
+     *   update          re-fetch current skin
+     *   help            show usage
+     */
+    boolean handleSkin(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player p)) { sender.sendMessage("Only players!"); return true; }
+
+        if (args.length == 0) {
+            p.sendMessage("§6=== SkinsRestorer (embedded) ===");
+            p.sendMessage("§e/skin set <玩家名>      按玩家名设置皮肤");
+            p.sendMessage("§e/skin url <图片URL>    从 URL 设置皮肤");
+            p.sendMessage("§e/skin clear            清除皮肤");
+            p.sendMessage("§e/skin update           重新获取当前皮肤");
+            p.sendMessage("§e/skins                 打开皮肤选择 GUI");
+            return true;
+        }
+
+        String sub = args[0].toLowerCase();
+        try {
+            net.skinsrestorer.api.SkinsRestorer api = SkinsRestorerProvider.get();
+            if (api == null) {
+                p.sendMessage("§cSkinsRestorer 未启动");
+                return true;
+            }
+            switch (sub) {
+                case "set": {
+                    if (args.length < 2) { p.sendMessage("§c用法: /skin set <玩家名>"); return true; }
+                    SkinIdentifier id = SkinIdentifier.ofCustom(args[1]);
+                    SkinApplier<Player> applier = api.getSkinApplier(Player.class);
+                    applier.applySkin(p, id);
+                    p.sendMessage("§a✓ 皮肤已设置为: §f" + args[1]);
+                    return true;
+                }
+                case "url": {
+                    if (args.length < 2) { p.sendMessage("§c用法: /skin url <URL>"); return true; }
+                    // Fetch the URL via MojangAPI (which can resolve textures from image URLs)
+                    String url = args[1];
+                    net.skinsrestorer.api.connections.MojangAPI mojang = api.getMojangAPI();
+                    // URL skins use Mojang's URL-as-skin feature (1.19.4+)
+                    SkinIdentifier id = SkinIdentifier.ofURL(url, SkinVariant.SLIM);
+                    SkinApplier<Player> applier = api.getSkinApplier(Player.class);
+                    applier.applySkin(p, id);
+                    p.sendMessage("§a✓ 已从 URL 设置皮肤");
+                    return true;
+                }
+                case "clear": case "reset": {
+                    SkinApplier<Player> applier = api.getSkinApplier(Player.class);
+                    // applySkin with default SkinIdentifier = null/empty resets to default
+                    applier.applySkin(p);
+                    p.sendMessage("§a✓ 皮肤已恢复默认");
+                    return true;
+                }
+                case "update": case "refresh": {
+                    // Force a re-fetch from Mojang
+                    org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                        try {
+                            java.util.Optional<SkinProperty> data = api.getSkinStorage().updatePlayerSkinData(p.getUniqueId());
+                            if (data.isPresent()) {
+                                SkinApplier<Player> applier = api.getSkinApplier(Player.class);
+                                applier.applySkin(p, data.get());
+                                Bukkit.getScheduler().runTask(this, () -> p.sendMessage("§a✓ 皮肤已刷新"));
+                            }
+                        } catch (DataRequestException e) {
+                            Bukkit.getScheduler().runTask(this, () -> p.sendMessage("§c刷新失败: " + e.getMessage()));
+                        }
+                    });
+                    p.sendMessage("§e正在刷新皮肤...");
+                    return true;
+                }
+                default:
+                    // Treat the first arg as a skin name (EssentialsX /skin <name> convention)
+                    SkinIdentifier id = SkinIdentifier.ofCustom(sub);
+                    SkinApplier<Player> applier = api.getSkinApplier(Player.class);
+                    applier.applySkin(p, id);
+                    p.sendMessage("§a✓ 皮肤已设置为: §f" + sub);
+                    return true;
+            }
+        } catch (Throwable t) {
+            p.sendMessage("§c错误: " + t.getMessage());
+            getLogger().warning("[Skin] " + p.getName() + " → " + sub + ": " + t);
+            return true;
+        }
+    }
+
+    /**
+     * /skins — open a chest GUI of well-known skins. Click a player head
+     * to apply that skin. Built directly with Bukkit Inventory API since
+     * the bridge bypasses SRBukkitBootstrap and the GUI helper isn't
+     * exposed from SkinsRestorerProvider.
+     */
+    boolean handleSkins(CommandSender sender) {
+        if (!(sender instanceof Player p)) { sender.sendMessage("Only players!"); return true; }
+
+        String[] popular = {
+                "Notch", "jeb_", "Dinnerbone", "CaptainSparklez", "Dream",
+                "PewDiePie", "Minecraft", "Mojang", "EnderDragon", "Herobrine"
+        };
+        Inventory gui = Bukkit.createInventory(p, 27, "§5选择皮肤");
+        for (int i = 0; i < popular.length && i < 27; i++) {
+            ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+            org.bukkit.inventory.meta.SkullMeta meta = (org.bukkit.inventory.meta.SkullMeta) head.getItemMeta();
+            if (meta != null) {
+                meta.setOwner(popular[i]);
+                meta.setDisplayName("§e" + popular[i]);
+                head.setItemMeta(meta);
+            }
+            gui.setItem(i, head);
+        }
+        // Slot 26: clear skin (barrier)
+        ItemStack barrier = new ItemStack(Material.BARRIER);
+        org.bukkit.inventory.meta.ItemMeta bm = barrier.getItemMeta();
+        if (bm != null) {
+            bm.setDisplayName("§c清除皮肤 (恢复默认)");
+            barrier.setItemMeta(bm);
+        }
+        gui.setItem(26, barrier);
+
+        p.openInventory(gui);
+        p.sendMessage("§a打开皮肤选择 GUI — 点击头颅应用");
+        return true;
+    }
+
+    @EventHandler
+    public void onSkinGuiClick(InventoryClickEvent e) {
+        String title = e.getView().getTitle();
+        if (!"§5选择皮肤".equals(title)) return;
+        e.setCancelled(true);
+        if (!(e.getWhoClicked() instanceof Player p)) return;
+        ItemStack clicked = e.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR) return;
+
+        p.closeInventory();
+        try {
+            net.skinsrestorer.api.SkinsRestorer api = SkinsRestorerProvider.get();
+            if (api == null) { p.sendMessage("§cSkinsRestorer 未启动"); return; }
+            SkinApplier<Player> applier = api.getSkinApplier(Player.class);
+
+            if (clicked.getType() == Material.BARRIER) {
+                applier.applySkin(p);
+                p.sendMessage("§a✓ 皮肤已恢复默认");
+                return;
+            }
+            if (clicked.getType() == Material.PLAYER_HEAD) {
+                org.bukkit.inventory.meta.SkullMeta meta = (org.bukkit.inventory.meta.SkullMeta) clicked.getItemMeta();
+                if (meta == null || meta.getOwner() == null) return;
+                String name = meta.getOwner();
+                SkinIdentifier id = SkinIdentifier.ofCustom(name);
+                applier.applySkin(p, id);
+                p.sendMessage("§a✓ 皮肤已设置为: §f" + name);
+            }
+        } catch (Throwable t) {
+            p.sendMessage("§c错误: " + t.getMessage());
+        }
     }
 
     boolean handleTerritory(CommandSender sender, String[] args) {
