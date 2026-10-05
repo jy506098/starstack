@@ -1,0 +1,48 @@
+server:
+  port: 5000
+  servlet:
+    session:
+      timeout: 7d
+      cookie:
+        http-only: true
+        same-site: lax
+        name: STARSTACK_SESSION
+spring:
+  application:
+    name: starstack
+  datasource:
+    url: jdbc:sqlite:${STARSTACK_DATA_DIR:./data}/starstack.db?journal_mode=WAL
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 8
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.dialect: org.hibernate.community.dialect.SQLiteDialect
+      hibernate.jdbc.time_zone: UTC
+    open-in-view: false
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+  jackson:
+    serialization:
+      indent-output: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+starstack:
+  data-dir: ${STARSTACK_DATA_DIR:./data}
+  avatars-dir: ${STARSTACK_AVATARS_DIR:./data/avatars}
+  legacy-data-dir: ${STARSTACK_LEGACY_DIR:./app/client}
+  upload:
+    avatar-max-bytes: 5242880
+    allowed-ext: png,jpg,jpeg,gif,webp
+logging:
+  level:
+    org.springframework: INFO
+    com.starstack: DEBUG

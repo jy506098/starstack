@@ -44,19 +44,30 @@ node_modules/
 .npm
 .yarn
 
+# Maven / Java
+target/
+*.class
+*.jar
+!mcplugin/StarStack.jar
+!mcplugin/StarStackmc.jar
+
+# frontend-maven-plugin-managed Node install
+.node/
+
 # PyInstaller
 build/
 dist/
 *.spec.bak
 
-# Compiled artifacts (deployed separately, not part of source)
-*.class
-*.jar
-!app/desktop_launcher*.bat
-!app/desktop_launcher*.sh
-!mcplugin/StarStack.jar
-!mcplugin/StarStackmc.jar
-
 # Backups and scratch
 *.bak
 *.orig
+
+# MC server files (referenced by mc/ build scripts)
+mc/server/
+mc/spark/
+
+# SQLite DB generated at runtime
+data/*.db
+data/*.db-shm
+data/*.db-wal

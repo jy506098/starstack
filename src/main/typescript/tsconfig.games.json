@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "none",
+    "outDir": "../../resources/static/js/games",
+    "rootDir": "src/games",
+    "strict": true,
+    "lib": ["ES2020", "DOM"],
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "sourceMap": true
+  },
+  "include": ["src/games/**/*.ts"]
+}
