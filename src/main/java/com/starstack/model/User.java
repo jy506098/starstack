@@ -61,7 +61,7 @@ public class User {
     @Column(name = "admin_daily_points_count", nullable = false)
     private int adminDailyPointsCount;
 
-    @Convert(converter = JsonStringConverter.class)
+    @Convert(converter = MouseEffectConfigConverter.class)
     @Column(name = "mouse_config_json", nullable = false, columnDefinition = "TEXT")
     private MouseEffectConfig mouseConfig = new MouseEffectConfig();
 

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "messages")
 @Data
@@ -26,5 +28,6 @@ public class Message {
     public Message(String name, String msg) {
         this.name = name;
         this.msg = msg;
+        this.createdAt = LocalDateTime.now().toString();
     }
 }

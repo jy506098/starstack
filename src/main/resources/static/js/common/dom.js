@@ -1,7 +1,6 @@
 // common/dom.ts — DOM helpers used across pages (flash messages, element creation).
-
-export function showFlash(type: 'success' | 'error' | 'info', msg: string): void {
-    const area = document.querySelector<HTMLElement>('.flash-area') ?? createFlashArea();
+export function showFlash(type, msg) {
+    const area = document.querySelector('.flash-area') ?? createFlashArea();
     const div = document.createElement('div');
     div.className = `flash flash-${type}`;
     div.textContent = msg;
@@ -11,9 +10,8 @@ export function showFlash(type: 'success' | 'error' | 'info', msg: string): void
         setTimeout(() => div.remove(), 500);
     }, 3000);
 }
-
-export function createFlashArea(): HTMLElement {
-    const main = document.querySelector<HTMLElement>('main.container');
+export function createFlashArea() {
+    const main = document.querySelector('main.container');
     if (!main) {
         throw new Error('No <main class="container"> found for flash area');
     }
@@ -22,11 +20,10 @@ export function createFlashArea(): HTMLElement {
     main.prepend(area);
     return area;
 }
-
-export function $(sel: string): HTMLElement | null {
-    return document.querySelector<HTMLElement>(sel);
+export function $(sel) {
+    return document.querySelector(sel);
 }
-
-export function $$(sel: string): HTMLElement[] {
-    return Array.from(document.querySelectorAll<HTMLElement>(sel));
+export function $$(sel) {
+    return Array.from(document.querySelectorAll(sel));
 }
+//# sourceMappingURL=dom.js.map

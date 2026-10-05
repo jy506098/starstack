@@ -1,60 +1,26 @@
-// Typed fetch wrapper. All POST endpoints used by the app share this shape.
+// api/client.ts — typed fetch wrappers.
 
-export interface ApiError extends Error {
-    status: number;
-    payload?: unknown;
+import type { VipStatus } from './types.js';
+
+export async function getVipStatus(): Promise<VipStatus> {
+    const r = await fetch('/api/vip_status');
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
 }
 
-async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
-    const opts: RequestInit = {
-        credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json',
-            ...(init.headers ?? {}),
-        },
-        ...init,
-    };
-    const r = await fetch(url, opts);
-    const text = await r.text();
-    let payload: unknown = null;
-    try {
-        payload = text ? JSON.parse(text) : null;
-    } catch {
-        // ignore — payload stays null
-    }
-    if (!r.ok) {
-        const err: ApiError = Object.assign(
-            new Error(`HTTP ${r.status}`),
-            { status: r.status, payload },
-        );
-        throw err;
-    }
-    return payload as T;
+export async function postJson<TReq, TRes>(url: string, body: TReq): Promise<TRes> {
+    const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
 }
 
-export const api = {
-    get: <T>(url: string) => apiFetch<T>(url, { method: 'GET' }),
-    post: <T>(url: string, body?: unknown) =>
-        apiFetch<T>(url, {
-            method: 'POST',
-            body: body !== undefined ? JSON.stringify(body) : undefined,
-        }),
-    postForm: <T>(url: string, form: FormData) =>
-        apiFetch<T>(url, { method: 'POST', body: form, headers: {} }),
-};
-
-export const Endpoints = {
-    buy:           '/buy',
-    useItem:       '/use_item',
-    buyGame:       '/buy_game',
-    buyVip:        '/buy_vip',
-    vipPayConfirm: (orderId: string) => `/vip_pay_confirm/${orderId}`,
-    buyRecharge:   '/buy_recharge',
-    rechargePayConfirm: (orderId: string) => `/recharge_pay_confirm/${orderId}`,
-    avatarUpload:  '/settings/avatar',
-    avatarReset:   '/settings/avatar',
-    saveMouseConfig: '/save_mouse_config',
-    getMouseConfig:  '/get_mouse_config',
-    vipStatus:     '/api/vip_status',
-    mcServer:      '/api/mc_server_info',
-} as const;
+export async function postForm<TRes>(url: string, form: HTMLFormElement): Promise<TRes> {
+    const fd = new FormData(form);
+    const r = await fetch(url, { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+}

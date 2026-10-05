@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - StarStack</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-page" th:classappend="${ctx.hasCyberTshirt} ? 'cyber-tshirt' : ''">
+    <main class="auth-container">
+        <div class="auth-card">
+            <h1>📝 注册新账号</h1>
+            <p class="muted">注册即送 <strong>100</strong> 积分</p>
+
+            <div th:if="${error}" class="flash error" th:text="${error}"></div>
+
+            <form method="post" action="/register" class="auth-form">
+                <label>
+                    <span>用户名</span>
+                    <input type="text" name="username" required autofocus>
+                </label>
+                <label>
+                    <span>密码 (8~16位)</span>
+                    <input type="password" name="password" minlength="8" maxlength="16" required>
+                </label>
+                <button type="submit" class="btn btn-primary btn-block">注册</button>
+            </form>
+            <p class="auth-foot">
+                已有账号？<a href="/login">直接登录</a>
+            </p>
+            <p class="auth-foot"><a href="/">← 返回首页</a></p>
+        </div>
+    </main>
+</body>
+</html>

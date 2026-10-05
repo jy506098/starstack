@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<body>
+<!--/* Single shared navbar. Replaces 21 copies of nav HTML across Jinja2 templates. */-->
+<nav class="navbar" th:fragment="navbar(active)">
+    <div class="nav-brand">⭐ StarStack</div>
+    <ul class="nav-links">
+        <li><a href="/" th:classappend="${active == 'board' ? 'active' : ''}">首页</a></li>
+        <li><a href="/message_board" th:classappend="${active == 'message_board' ? 'active' : ''}">留言板</a></li>
+        <li th:if="${ctx.username != null and #lists.contains(ctx.unlockedContent, '游戏手柄')}">
+            <a href="/game_center" th:classappend="${active == 'game_center' ? 'active' : ''}">游戏</a>
+        </li>
+        <li th:if="${ctx.username != null and #lists.contains(ctx.unlockedContent, '影视播放器')}">
+            <a href="/video_player" th:classappend="${active == 'video_player' ? 'active' : ''}">影视</a>
+        </li>
+    </ul>
+    <div class="nav-user">
+        <span class="nav-clock" th:if="${ctx.hasClock}" id="navClock">--:--:--</span>
+        <span class="nav-points" th:if="${ctx.username != null}">💰 <span th:text="${ctx.userPoints}">0</span></span>
+        <span class="badge badge-vip"
+              th:if="${ctx.isVip}"
+              th:classappend="'tier-' + ${#strings.toLowerCase(ctx.vipTier)}">👑 <span th:text="${ctx.vipTier}"></span> · <span th:text="${ctx.vipDaysLeft}"></span>天</span>
+        <div class="nav-user-dropdown" th:if="${ctx.username != null}">
+            <button class="nav-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+                <img class="nav-avatar"
+                     th:src="${#strings.isEmpty(ctx.avatar) or #strings.startsWith(ctx.avatar, 'default:')
+                              ? '/avatars/default.svg' : ctx.avatar}"
+                     alt="avatar">
+                <span class="nav-username" th:text="${ctx.username}">user</span>
+                <span class="nav-caret">▾</span>
+            </button>
+            <div class="nav-user-menu" role="menu">
+                <a href="/recharge" class="nav-user-menu-item" role="menuitem">💰 充值</a>
+                <a href="/store" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
+                <a href="/inventory" class="nav-user-menu-item" role="menuitem">🎒 背包</a>
+                <a href="/tasks" class="nav-user-menu-item" role="menuitem">📋 任务</a>
+                <a href="/settings" class="nav-user-menu-item" role="menuitem">⚙️ 设置</a>
+                <a href="/logout" class="nav-user-menu-item nav-user-menu-item-danger" role="menuitem">🚪 退出</a>
+            </div>
+        </div>
+        <div class="nav-user-dropdown" th:unless="${ctx.username != null}">
+            <button class="nav-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+                <span class="nav-account-icon">👤</span>
+                <span class="nav-caret">▾</span>
+            </button>
+            <div class="nav-user-menu" role="menu">
+                <a href="/recharge" class="nav-user-menu-item" role="menuitem">💰 充值</a>
+                <a href="/store" class="nav-user-menu-item" role="menuitem">🛒 商店</a>
+                <a href="/login" class="nav-user-menu-item" role="menuitem">🔐 登录</a>
+                <a href="/register" class="nav-user-menu-item" role="menuitem">📝 注册</a>
+            </div>
+        </div>
+    </div>
+</nav>
+</body>
+</html>

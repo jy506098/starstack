@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/* Flash messages area. */-->
+<div th:fragment="flash" class="flash-area">
+    <div th:each="flash : ${flashes}" th:class="'flash flash-' + ${flash.category}" th:text="${flash.message}">flash</div>
+</div>
+</body>
+</html>

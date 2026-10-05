@@ -1,37 +1,22 @@
 // mouse-trail/index.ts — particle trail that follows the mouse.
 // Reads config from /get_mouse_config JSON.
-
-export interface MouseConfig {
-    enabled: boolean;
-    color_mode: 'rainbow' | 'cyan' | 'random';
-    shape: 'circle' | 'square' | 'star';
-}
-
-interface Particle {
-    x: number;
-    y: number;
-    size: number;
-    life: number;
-    color: string;
-}
-
-const DEFAULT: MouseConfig = { enabled: true, color_mode: 'rainbow', shape: 'circle' };
-
-function rand(min: number, max: number): number {
+const DEFAULT = { enabled: true, color_mode: 'rainbow', shape: 'circle' };
+function rand(min, max) {
     return Math.random() * (max - min) + min;
 }
-
-function pickColor(config: MouseConfig, hue: number): string {
-    if (config.color_mode === 'cyan') return `rgba(102, 252, 241, ${rand(0.4, 0.9)})`;
-    if (config.color_mode === 'random') return `hsl(${rand(0, 360)}, 80%, 60%)`;
+function pickColor(config, hue) {
+    if (config.color_mode === 'cyan')
+        return `rgba(102, 252, 241, ${rand(0.4, 0.9)})`;
+    if (config.color_mode === 'random')
+        return `hsl(${rand(0, 360)}, 80%, 60%)`;
     return `hsl(${hue}, 90%, 60%)`;
 }
-
-function drawShape(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string, shape: MouseConfig['shape']): void {
+function drawShape(ctx, x, y, size, color, shape) {
     ctx.fillStyle = color;
     if (shape === 'square') {
         ctx.fillRect(x - size / 2, y - size / 2, size, size);
-    } else if (shape === 'star') {
+    }
+    else if (shape === 'star') {
         ctx.beginPath();
         for (let i = 0; i < 5; i++) {
             const a = (i * 2 * Math.PI / 5) - Math.PI / 2;
@@ -40,31 +25,30 @@ function drawShape(ctx: CanvasRenderingContext2D, x: number, y: number, size: nu
         }
         ctx.closePath();
         ctx.fill();
-    } else {
+    }
+    else {
         ctx.beginPath();
         ctx.arc(x, y, size / 2, 0, Math.PI * 2);
         ctx.fill();
     }
 }
-
-export function initMouseTrail(canvas: HTMLCanvasElement, initConfig?: MouseConfig): void {
+export function initMouseTrail(canvas, initConfig) {
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    let config: MouseConfig = { ...DEFAULT, ...(initConfig ?? {}) };
+    if (!ctx)
+        return;
+    let config = { ...DEFAULT, ...(initConfig ?? {}) };
     let hue = 0;
-
-    function resize(): void {
+    function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
     resize();
     window.addEventListener('resize', resize);
-
-    const particles: Particle[] = [];
+    const particles = [];
     const MAX = 60;
-
     window.addEventListener('mousemove', (e) => {
-        if (!config.enabled) return;
+        if (!config.enabled)
+            return;
         particles.push({
             x: e.clientX,
             y: e.clientY,
@@ -72,18 +56,23 @@ export function initMouseTrail(canvas: HTMLCanvasElement, initConfig?: MouseConf
             life: 1,
             color: pickColor(config, hue),
         });
-        if (particles.length > MAX) particles.shift();
+        if (particles.length > MAX)
+            particles.shift();
     });
-
-    function render(): void {
-        if (!ctx) return;
+    function render() {
+        if (!ctx)
+            return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         hue = (hue + 2) % 360;
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
             p.life -= 0.03;
-            if (p.life <= 0) { particles.splice(i, 1); continue; }
-            if (!ctx) return;
+            if (p.life <= 0) {
+                particles.splice(i, 1);
+                continue;
+            }
+            if (!ctx)
+                return;
             ctx.globalAlpha = p.life;
             drawShape(ctx, p.x, p.y, p.size * p.life, p.color, config.shape);
         }
@@ -91,8 +80,8 @@ export function initMouseTrail(canvas: HTMLCanvasElement, initConfig?: MouseConf
         requestAnimationFrame(render);
     }
     render();
-
-    (window as unknown as { updateMouseConfig?: (cfg: Partial<MouseConfig>) => void }).updateMouseConfig = (newCfg) => {
+    window.updateMouseConfig = (newCfg) => {
         config = { ...config, ...newCfg };
     };
 }
+//# sourceMappingURL=index.js.map

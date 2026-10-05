@@ -1,6 +1,5 @@
 -- StarStack SQLite schema. Idempotent — safe to run on every boot.
-PRAGMA journal_mode=WAL;
-PRAGMA foreign_keys=ON;
+-- Note: PRAGMA statements run via JDBC DataSource init, not here.
 
 CREATE TABLE IF NOT EXISTS users (
     username              TEXT PRIMARY KEY,
