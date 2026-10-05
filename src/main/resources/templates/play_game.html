@@ -26,6 +26,7 @@
         <script type="module" src="/js/pages/snake.js"></script>
     </th:block>
     <th:block th:unless="${gameName == '贪吃蛇大作战'}">
+        <script defer src="/js/games/_framework.js"></script>
         <script th:src="@{'/js/games/' + ${gameJsFile}}" defer></script>
         <script defer src="/js/games/dispatcher.js"></script>
         <script>

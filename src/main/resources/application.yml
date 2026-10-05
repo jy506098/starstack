@@ -7,6 +7,8 @@ server:
         http-only: true
         same-site: lax
         name: STARSTACK_SESSION
+  tomcat:
+    uri-encoding: UTF-8
 spring:
   application:
     name: starstack

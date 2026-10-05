@@ -148,6 +148,8 @@ public class CatalogData {
         m.put("俄罗斯方块", gp(99));
         m.put("抛硬币小游戏", gp(49));
         m.put("成语接龙", gp(99));
+        // 贪吃蛇大作战 — 免费联机游戏 (WebSocket 在 /snake_ws)
+        m.put("贪吃蛇大作战", gp(0));
         return m;
     }
     private static Map<String, Object> gp(int price) {
