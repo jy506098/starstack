@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>音乐播放器 - StarStack</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/music.css">
+</head>
+<body th:classappend="${ctx.hasCyberTshirt} ? 'cyber-tshirt' : ''">
+    <nav class="navbar" th:replace="~{fragments/navbar :: navbar('inventory')}"></nav>
+    <main class="container">
+        <h1>🎵 音乐播放器</h1>
+        <p class="muted">程序化生成曲库（待扩展）</p>
+
+        <div class="music-player">
+            <div class="track-info">
+                <h2 id="track-title">未选择</h2>
+                <p id="track-status" class="muted">从下方列表选曲</p>
+            </div>
+            <audio id="audio-player" controls></audio>
+            <ul id="track-list">
+                <li th:each="track : ${tracks}" th:data-url="${track.url}">
+                    <span th:text="${track.name}">track</span>
+                </li>
+            </ul>
+        </div>
+    </main>
+
+    <canvas id="mouseTrailCanvas" th:class="${ctx.mouseEffectEnabled} ? 'mouse-trail-canvas' : 'mouse-trail-canvas hidden'"></canvas>
+    <script type="module" src="/js/pages/main.js"></script>
+    <script type="module" src="/js/pages/music_library.js"></script>
+</body>
+</html>

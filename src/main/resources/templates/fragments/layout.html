@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<body>
+<!--/* Generic content-page layout (used by tutorials, headphones, music, video). */-->
+<div th:fragment="contentPage(active, title)" class="content-page">
+    <nav class="navbar" th:replace="~{fragments/navbar :: navbar(${active})}"></nav>
+    <main class="container content-main">
+        <h1 th:text="${title}">title</h1>
+        <div class="content-body">
+            <slot th:text="${body} ?: ''">content</slot>
+        </div>
+    </main>
+</div>
+</body>
+</html>

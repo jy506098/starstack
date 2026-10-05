@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP - StarStack</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body th:classappend="${ctx.hasCyberTshirt} ? 'cyber-tshirt' : ''">
+    <nav class="navbar" th:replace="~{fragments/navbar :: navbar('vip')}"></nav>
+
+    <main class="container">
+        <div th:if="${success}" class="flash success" th:text="${success}"></div>
+        <div th:if="${error}" class="flash error" th:text="${error}"></div>
+
+        <h1>👑 VIP 会员</h1>
+
+        <div class="vip-hero" th:if="${ctx.isVip}">
+            <span class="badge badge-vip" th:classappend="'tier-' + ${#strings.toLowerCase(ctx.vipTier)}">👑 <span th:text="${ctx.vipTier}"></span></span>
+            当前 VIP 还剩 <strong><span th:text="${ctx.vipDaysLeft}"></span> 天</strong>
+        </div>
+
+        <div class="item-grid">
+            <div class="item-card vip-card" th:each="entry : ${packages}"
+                 th:classappend="'tier-' + ${#strings.toLowerCase(entry.value.tier)}">
+                <h3 th:text="${entry.value.label}">pkg</h3>
+                <p class="item-desc">每日 +<span th:text="${entry.value.daily_bonus}"></span> 积分 · 全教程解锁 · 9 折优惠</p>
+                <div class="item-footer">
+                    <span class="item-price">¥<span th:text="${entry.value.price_cny}"></span></span>
+                    <form method="post" action="/buy_vip" style="display:inline;">
+                        <input type="hidden" name="pkg" th:value="${entry.key}">
+                        <button class="btn btn-vip" type="submit">立即开通</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <canvas id="mouseTrailCanvas"
+            th:class="${ctx.mouseEffectEnabled} ? 'mouse-trail-canvas' : 'mouse-trail-canvas hidden'"></canvas>
+    <script type="module" src="/js/pages/main.js"></script>
+    <script type="module" src="/js/pages/vip.js"></script>
+</body>
+</html>

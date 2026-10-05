@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商店 - StarStack</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body th:classappend="${ctx.hasCyberTshirt} ? 'cyber-tshirt' : ''">
+    <nav class="navbar" th:replace="~{fragments/navbar :: navbar('store')}"></nav>
+
+    <main class="container">
+        <div th:if="${success}" class="flash success" th:text="${success}"></div>
+        <div th:if="${error}" class="flash error" th:text="${error}"></div>
+
+        <div class="vip-hero" th:if="${ctx.isVip}">
+            <span class="badge badge-vip" th:classappend="'tier-' + ${#strings.toLowerCase(ctx.vipTier)}">👑 <span th:text="${ctx.vipTier}"></span></span>
+            您的 VIP 还剩 <strong><span th:text="${ctx.vipDaysLeft}"></span> 天</strong>，
+            <a href="/vip">续费 / 升级</a>
+        </div>
+        <div class="vip-hero vip-hero-cta" th:unless="${ctx.isVip}">
+            🌟 开通 VIP 解锁全部教程、影视、音乐，每日额外 +积分，商店享 9 折！
+            <a class="btn btn-vip" href="/vip">立即开通</a>
+        </div>
+
+        <h1>🛒 商店</h1>
+        <p class="muted">当前积分: <strong>💰 <span th:text="${ctx.userPoints}">0</span></strong></p>
+        <div class="recharge-cta">
+            积分不够？
+            <a class="btn btn-sm btn-vip" href="/recharge">💰 立即充值</a>
+        </div>
+
+        <div class="item-grid">
+            <div class="item-card"
+                 th:each="entry : ${items}"
+                 th:classappend="${#lists.contains(ctx.unlockedContent, entry.key)} ? 'unlocked' : ''">
+                <h3 th:text="${entry.key}">item</h3>
+                <p class="item-desc" th:text="${entry.value.desc}">desc</p>
+                <p class="item-effect">效果: <span th:text="${entry.value.effect}"></span></p>
+                <div class="item-footer">
+                    <span class="item-price">
+                        <span th:if="${ctx.isVip}">💰 <span th:text="${T(java.lang.Math).round(entry.value.price * 0.9)}"></span></span>
+                        <span th:unless="${ctx.isVip}">💰 <span th:text="${entry.value.price}"></span></span>
+                    </span>
+                    <span class="badge badge-success" th:if="${#lists.contains(ctx.unlockedContent, entry.key)}">已拥有</span>
+                    <form th:unless="${#lists.contains(ctx.unlockedContent, entry.key)}" method="post" action="/buy" style="display:inline;">
+                        <input type="hidden" name="item" th:value="${entry.key}">
+                        <button class="btn btn-primary" type="submit"
+                                th:disabled="${ctx.userPoints < (ctx.isVip ? T(java.lang.Math).round(entry.value.price * 0.9) : entry.value.price)}">
+                            购买
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <canvas id="mouseTrailCanvas"
+            th:class="${ctx.mouseEffectEnabled} ? 'mouse-trail-canvas' : 'mouse-trail-canvas hidden'"></canvas>
+    <script type="module" src="/js/pages/main.js"></script>
+</body>
+</html>

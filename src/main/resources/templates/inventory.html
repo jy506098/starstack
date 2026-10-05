@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背包 - StarStack</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body th:classappend="${ctx.hasCyberTshirt} ? 'cyber-tshirt' : ''">
+    <nav class="navbar" th:replace="~{fragments/navbar :: navbar('inventory')}"></nav>
+
+    <main class="container">
+        <div th:if="${success}" class="flash success" th:text="${success}"></div>
+        <div th:if="${error}" class="flash error" th:text="${error}"></div>
+
+        <h1>🎒 我的背包</h1>
+        <p class="muted">当前积分: <strong>💰 <span th:text="${ctx.userPoints}">0</span></strong></p>
+
+        <div class="item-grid">
+            <div class="item-card" th:each="entry : ${items}">
+                <h3 th:text="${entry.key}">item</h3>
+                <p class="item-desc" th:text="${entry.value.desc}">desc</p>
+                <p class="item-effect">效果: <span th:text="${entry.value.effect}"></span></p>
+                <div class="item-footer">
+                    <form method="post" action="/use_item" style="display:inline;">
+                        <input type="hidden" name="item" th:value="${entry.key}">
+                        <button class="btn btn-primary" type="submit">使用</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <p class="empty">背包空空如也，快去<a href="/store">商店</a>看看吧～</p>
+    </main>
+
+    <canvas id="mouseTrailCanvas"
+            th:class="${ctx.mouseEffectEnabled} ? 'mouse-trail-canvas' : 'mouse-trail-canvas hidden'"></canvas>
+    <script type="module" src="/js/pages/main.js"></script>
+</body>
+</html>

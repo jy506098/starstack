@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务 - StarStack</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body th:classappend="${ctx.hasCyberTshirt} ? 'cyber-tshirt' : ''">
+    <nav class="navbar" th:replace="~{fragments/navbar :: navbar('tasks')}"></nav>
+
+    <main class="container">
+        <div th:if="${success}" class="flash success" th:text="${success}"></div>
+        <div th:if="${error}" class="flash error" th:text="${error}"></div>
+
+        <h1>🎯 任务中心</h1>
+        <p class="muted">完成任务赚取积分</p>
+
+        <section class="task-section">
+            <h2>🏆 固定任务</h2>
+            <div class="task-grid">
+                <div class="task-card" th:each="task : ${fixedTasks}">
+                    <h3 th:text="${task.label}">name</h3>
+                    <p>完成该任务可获得积分奖励</p>
+                    <div class="task-footer">
+                        <span class="task-reward">+<span th:text="${task.reward}">0</span> 积分</span>
+                        <span class="badge badge-success"
+                              th:if="${user.fixedTasks != null and user.fixedTasks[task.id] != null and user.fixedTasks[task.id].completed}">✓ 已完成</span>
+                        <form th:unless="${user.fixedTasks != null and user.fixedTasks[task.id] != null and user.fixedTasks[task.id].completed}"
+                              method="post" action="/tasks/claim" style="display:inline;">
+                            <input type="hidden" name="taskId" th:value="${task.id}">
+                            <input type="hidden" name="kind" value="fixed">
+                            <button class="btn btn-primary" type="submit">领取</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="task-section">
+            <h2>📅 每日任务</h2>
+            <p class="muted">每天可领取一次</p>
+            <div class="task-grid">
+                <div class="task-card" th:each="task : ${dailyTasks}">
+                    <h3 th:text="${task.label}">name</h3>
+                    <p>今日可领取的每日任务</p>
+                    <div class="task-footer">
+                        <span class="task-reward">+<span th:text="${task.reward}">0</span> 积分</span>
+                        <span class="badge badge-success"
+                              th:if="${user.dailyTasks != null and user.dailyTasks[task.id] != null and user.dailyTasks[task.id] == #strings.format(#calendars.format(#calendars.createNow(),'yyyy-MM-dd'),'')}">✓ 已领取</span>
+                        <form th:unless="${user.dailyTasks != null and user.dailyTasks[task.id] != null and user.dailyTasks[task.id] == #strings.format(#calendars.format(#calendars.createNow(),'yyyy-MM-dd'),'')}"
+                              method="post" action="/tasks/claim" style="display:inline;">
+                            <input type="hidden" name="taskId" th:value="${task.id}">
+                            <input type="hidden" name="kind" value="daily">
+                            <button class="btn btn-primary" type="submit">领取</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <canvas id="mouseTrailCanvas"
+            th:class="${ctx.mouseEffectEnabled} ? 'mouse-trail-canvas' : 'mouse-trail-canvas hidden'"></canvas>
+    <script type="module" src="/js/pages/main.js"></script>
+</body>
+</html>
