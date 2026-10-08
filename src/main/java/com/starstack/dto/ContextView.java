@@ -20,6 +20,7 @@ public class ContextView {
     private String username;
     private long userPoints;
     private String avatar = "default:none";
+    private String phone = "";
     private boolean isVip;
     private String vipTier = "";
     private int vipDaysLeft;

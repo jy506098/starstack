@@ -52,7 +52,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             || path.startsWith("/static/") || path.startsWith("/css/")
             || path.startsWith("/js/") || path.startsWith("/images/")
             || path.startsWith("/avatars/") || path.startsWith("/api/vip_status")
-            || path.startsWith("/snake_ws") || path.equals("/favicon.ico")) return true;
+            || path.equals("/favicon.ico")) return true;
         return false;
     }
 }

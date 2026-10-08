@@ -11,6 +11,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.BanEntry;
+import org.bukkit.BanList;
 import org.bukkit.enchantments.Enchantment;
 import net.skinsrestorer.api.SkinsRestorerProvider;
 import net.skinsrestorer.api.property.SkinApplier;
@@ -31,6 +33,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -84,6 +87,21 @@ public class StarStack extends JavaPlugin implements Listener {
     };
     private final Set<String> tntCracking = new HashSet<>();
 
+    /** UUID → join time (ms). Players stay here until they /login or /register,
+     *  or get kicked by the auth-timeout scheduler (60 s). */
+    private final Map<UUID, Long> unauthedJoinTimes = new HashMap<>();
+    private static final long AUTH_TIMEOUT_MS = 60_000L;
+
+    /** Failed-login counter per UUID. Increments when the auth-timeout kicks the
+     *  player out (they didn't /login or /register in time). When the count
+     *  reaches AUTH_FAIL_BAN_THRESHOLD, the next such timeout also bans the
+     *  player for 1 hour before kicking. Resets on successful /login or
+     *  /register. Persisted to failCounters.dat so it survives restarts. */
+    private final Map<UUID, Integer> authFailCounts = new HashMap<>();
+    private static final int AUTH_FAIL_BAN_THRESHOLD = 5;
+    private static final long AUTH_FAIL_BAN_MS = 60L * 60L * 1000L;
+    private File failCountersFile;
+
     // Other plugin components (initialized in onEnable)
     private Essentials essentials;
     private AuthMe authMe;
@@ -95,7 +113,7 @@ public class StarStack extends JavaPlugin implements Listener {
     private CoreProtect coreProtect;
     private MagisterAC magisterAC;
     private LuckPerms luckPerms;
-    private RaspberryPi raspberryPi;
+    private AiJudge aiJudge;
 
     public AuthMe getAuthMe() { return authMe; }
     public Claims getClaims() { return claims; }
@@ -107,14 +125,16 @@ public class StarStack extends JavaPlugin implements Listener {
     public CoreProtect getCoreProtect() { return coreProtect; }
     public MagisterAC getMagisterAC() { return magisterAC; }
     public LuckPerms getLuckPerms() { return luckPerms; }
-    public RaspberryPi getRaspberryPi() { return raspberryPi; }
+    public AiJudge getAiJudge() { return aiJudge; }
 
     @Override
     public void onEnable() {
         getLogger().info("StarStackmc v3.0 enabled - territories + auto-reset + minigames");
         if (!getDataFolder().exists()) getDataFolder().mkdirs();
         dataFile = new File(getDataFolder(), "territories.dat");
+        failCountersFile = new File(getDataFolder(), "failCounters.dat");
         loadTerritories();
+        loadFailCounters();
         Bukkit.getPluginManager().registerEvents(this, this);
 
         // Initialize sub-modules
@@ -135,8 +155,55 @@ public class StarStack extends JavaPlugin implements Listener {
         magisterAC.register();
         this.luckPerms = new LuckPerms(this);
         luckPerms.register();
-        this.raspberryPi = new RaspberryPi(this);
-        raspberryPi.register();
+        this.aiJudge = new AiJudge(this);
+        aiJudge.register();
+
+        // Auth-timeout kick: every 1 s, scan players that joined but never authed
+        // and boot them after AUTH_TIMEOUT_MS. AuthMe blocks them from doing
+        // anything except /login and /register; we just enforce the time limit.
+        // Players who time out AUTH_FAIL_BAN_THRESHOLD times get a 1-hour temp ban.
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            long now = System.currentTimeMillis();
+            Iterator<Map.Entry<UUID, Long>> it = unauthedJoinTimes.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<UUID, Long> entry = it.next();
+                Player p = Bukkit.getPlayer(entry.getKey());
+                if (p == null || !p.isOnline()) { it.remove(); continue; }
+                if (authMe.isAuthenticated(p)) {
+                    if (authFailCounts.containsKey(entry.getKey())) {
+                        authFailCounts.remove(entry.getKey());
+                        saveFailCounters();
+                    }
+                    it.remove();
+                    continue;
+                }
+                if (now - entry.getValue() >= AUTH_TIMEOUT_MS) {
+                    UUID id = entry.getKey();
+                    int fails = authFailCounts.getOrDefault(id, 0) + 1;
+                    authFailCounts.put(id, fails);
+                    saveFailCounters();
+
+                    if (fails >= AUTH_FAIL_BAN_THRESHOLD) {
+                        Date expires = new Date(System.currentTimeMillis() + AUTH_FAIL_BAN_MS);
+                        Bukkit.getBanList(BanList.Type.NAME).addBan(
+                                p.getName(),
+                                "连续 " + AUTH_FAIL_BAN_THRESHOLD + " 次未登录自动封禁",
+                                expires,
+                                "StarStackmc");
+                        p.kickPlayer("§c你已被自动封禁 1 小时\n\n§f原因: §e连续 " + fails +
+                                " 次未登录或注册\n§f到期: §e" +
+                                new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(expires));
+                        getLogger().info("Auth-timeout auto-banned " + p.getName() +
+                                " (fails=" + fails + ") until " + expires);
+                    } else {
+                        p.kickPlayer("§c登录超时 (第 " + fails + " 次)\n\n§f累计 §e" + fails +
+                                "/" + AUTH_FAIL_BAN_THRESHOLD + " §f次未登录将被自动封禁 1 小时\n\n" +
+                                "§f请使用 §e/register <密码> §f注册账号\n或 §e/login <密码> §f登录已有账号");
+                    }
+                    it.remove();
+                }
+            }
+        }, 20L, 20L);
 
         // Bootstrap the embedded SkinsRestorer (classes shaded into this jar).
         SkinsRestorerBridge.start(this);
@@ -150,12 +217,14 @@ public class StarStack extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         saveTerritories();
+        saveFailCounters();
         if (essentials != null) essentials.save();
         if (rptMarket != null) rptMarket.save();
         if (mintconomy != null) mintconomy.save();
         if (coreProtect != null) coreProtect.save();
         if (magisterAC != null) magisterAC.save();
         if (luckPerms != null) luckPerms.save();
+        if (aiJudge != null) aiJudge.save();
         SkinsRestorerBridge.shutdown();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (playerGame.containsKey(p.getUniqueId())) {
@@ -576,6 +645,60 @@ public class StarStack extends JavaPlugin implements Listener {
         }
     }
 
+    /** Load auth-fail counters from plugins/StarStackmc/failCounters.dat.
+     *  Format: one line per entry "<uuid> <count>". Silently no-op if the
+     *  file is missing or malformed — losing these counters just means the
+     *  player starts the new server with a clean slate (safer than crashing). */
+    void loadFailCounters() {
+        if (!failCountersFile.exists()) return;
+        int loaded = 0;
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(
+                new FileInputStream(failCountersFile), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+                int sp = line.indexOf(' ');
+                if (sp <= 0) continue;
+                try {
+                    UUID id = UUID.fromString(line.substring(0, sp));
+                    int n = Integer.parseInt(line.substring(sp + 1).trim());
+                    if (n > 0) {
+                        authFailCounts.put(id, n);
+                        loaded++;
+                    }
+                } catch (Exception ignore) { /* skip malformed line */ }
+            }
+            getLogger().info("Loaded " + loaded + " auth-fail counters");
+        } catch (Exception e) {
+            getLogger().warning("Failed to load failCounters.dat: " + e.getMessage());
+        }
+    }
+
+    /** Persist auth-fail counters atomically: write to .tmp, then rename. */
+    void saveFailCounters() {
+        File tmp = new File(failCountersFile.getParentFile(), "failCounters.dat.tmp");
+        try (BufferedWriter w = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(tmp), StandardCharsets.UTF_8))) {
+            w.write("# StarStackmc auth-fail counters: <uuid> <count>");
+            w.newLine();
+            for (Map.Entry<UUID, Integer> e : authFailCounts.entrySet()) {
+                w.write(e.getKey().toString() + " " + e.getValue());
+                w.newLine();
+            }
+        } catch (Exception e) {
+            getLogger().warning("Failed to save failCounters.dat: " + e.getMessage());
+            return;
+        }
+        if (failCountersFile.exists() && !failCountersFile.delete()) {
+            getLogger().warning("Could not remove old failCounters.dat");
+            return;
+        }
+        if (!tmp.renameTo(failCountersFile)) {
+            getLogger().warning("Could not rename failCounters.dat.tmp");
+        }
+    }
+
     boolean isDefault(Material m) {
         switch (m) {
             case STONE:
@@ -699,6 +822,20 @@ public class StarStack extends JavaPlugin implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         playerGame.remove(e.getPlayer().getUniqueId());
+        unauthedJoinTimes.remove(e.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onJoinForAuthKick(PlayerJoinEvent e) {
+        Player p = e.getPlayer();
+        // Defer one tick so AuthMe.onJoin has already populated its authenticated set
+        // (and so we don't race with any session-bootstrap code).
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (!p.isOnline()) return;
+            if (!authMe.isAuthenticated(p)) {
+                unauthedJoinTimes.put(p.getUniqueId(), System.currentTimeMillis());
+            }
+        }, 1L);
     }
 
     @EventHandler
@@ -892,7 +1029,7 @@ public class StarStack extends JavaPlugin implements Listener {
                 case "kitreset": case "resetkit": case "kitr": return essentials.handleKitReset(sender, args);
                 case "kick": return essentials.handleKick(sender, args);
                 case "kickall": return essentials.handleKickAll(sender, args);
-                case "ban": return essentials.handleBan(sender, args);
+                case "ban": return handleBanOneHour(sender, args);
                 case "tempban": return essentials.handleTempBan(sender, args);
                 case "banip": return essentials.handleBanIp(sender, args);
                 case "tempbanip": return essentials.handleTempBanIp(sender, args);
@@ -978,7 +1115,6 @@ public class StarStack extends JavaPlugin implements Listener {
                 case "co": return coreProtect.handleCo(sender, args);
                 case "magister": case "ac": return magisterAC.handleMagister(sender, args);
                 case "lp": case "luckperms": return luckPerms.handleLp(sender, args);
-                case "rpi": case "raspberrypi": case "mcpiserver": return raspberryPi.handleRpi(sender, args);
                 // ===== 11 EssentialsX duplicate commands (restored) =====
                 case "gamemode": case "gm": case "gms": case "gmc": case "gma": case "gmsp":
                     return essentials.handleGamemode(sender, args);
@@ -1628,6 +1764,45 @@ public class StarStack extends JavaPlugin implements Listener {
         } catch (Exception e) {
             getLogger().warning("Reset failed: " + e.getMessage());
         }
+    }
+
+    // ───── /ban: 1-hour temporary ban ─────
+    // Adds the player to Bukkit's NAME ban list with a 1 h expiry. When the
+    // expiry passes, Paper's connection handler lets them back in automatically.
+    // We kick the player (if online) with the ban reason and remaining time.
+    private boolean handleBanOneHour(CommandSender sender, String[] args) {
+        if (!sender.isOp()) {
+            sender.sendMessage("§c权限不足：需要 OP 身份");
+            return true;
+        }
+        if (args.length < 1) {
+            sender.sendMessage("§c用法: /ban <玩家> [原因]   （1 小时临时封禁）");
+            return true;
+        }
+        String targetName = args[0];
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i < args.length; i++) {
+            if (i > 1) sb.append(' ');
+            sb.append(args[i]);
+        }
+        String reason = sb.length() == 0 ? "管理员封禁" : sb.toString();
+
+        Date expires = new Date(System.currentTimeMillis() + 60L * 60L * 1000L);
+        Player online = Bukkit.getPlayerExact(targetName);
+        String banKey = (online != null) ? online.getName() : targetName;
+
+        Bukkit.getBanList(BanList.Type.NAME).addBan(banKey, reason, expires, sender.getName());
+
+        if (online != null) {
+            String kick = "§c你已被封禁\n§f原因: §e" + reason +
+                    "\n§f封禁时长: §e1 小时" +
+                    "\n§f到期时间: §e" + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(expires);
+            online.kickPlayer(kick);
+        }
+
+        Bukkit.broadcastMessage("§e" + sender.getName() + " §f封禁 §c" + banKey +
+                " §f(1 小时): §7" + reason);
+        return true;
     }
 
     // ===== INNER CLASSES =====

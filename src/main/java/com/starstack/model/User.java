@@ -88,7 +88,7 @@ public class User {
     @Column(name = "recharge_history_json", nullable = false, columnDefinition = "TEXT")
     private java.util.List<RechargeRecord> rechargeHistory = new java.util.ArrayList<>();
 
-    @Convert(converter = JsonStringConverter.class)
+    @Convert(converter = JsonTaskRecordConverter.class)
     @Column(name = "fixed_tasks_json", nullable = false, columnDefinition = "TEXT")
     private Map<String, TaskRecord> fixedTasks = new LinkedHashMap<>();
 

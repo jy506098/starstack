@@ -50,6 +50,12 @@ target/
 *.jar
 !mcplugin/StarStack.jar
 !mcplugin/StarStackmc.jar
+# MC plugin compile scratch dirs
+mc/plugin/staging/
+mc/plugin/stg_compile/
+mc/plugin/stg2/
+mc/plugin/build/
+mc/plugin/test_build/
 
 # frontend-maven-plugin-managed Node install
 .node/

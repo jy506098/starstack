@@ -105,12 +105,12 @@ public class CatalogData {
     public static final Map<String, Map<String, Object>> ITEM_DATA = buildItems();
     private static Map<String, Map<String, Object>> buildItems() {
         Map<String, Map<String, Object>> m = new LinkedHashMap<>();
-        m.put("编程秘籍",       item(199,  "解锁编程秘籍课程",        "新内容",          "tutorial"));
-        m.put("C++ 入门",       item(199,  "解锁 C++ 入门课程",       "新内容",          "tutorial"));
-        m.put("node.js 入门",   item(199,  "解锁 Node.js 入门",       "新内容",          "tutorial"));
-        m.put("前端三剑客 入门", item(199,  "解锁前端 HTML/CSS/JS",   "新内容",          "tutorial"));
-        m.put("Python 入门",    item(199,  "解锁 Python 入门课程",    "新内容",          "tutorial"));
-        m.put("Python后端 入门", item(199,  "解锁 Python 后端入门",   "新内容",          "tutorial"));
+        m.put("编程秘籍",       item(199,  "学习编程秘籍，提升你的代码能力",      "📖 解锁《编程思想》电子书，提升编程思维",     "tutorial"));
+        m.put("C++ 入门",       item(599,  "从零开始学习 C++，掌握编程核心技能",  "⚡ 解锁《C++ 入门》视频教程，共 314 集，循序渐进", "tutorial"));
+        m.put("node.js 入门",   item(399,  "掌握 Node.js，轻松构建高性能后端服务", "📘 解锁《Node.js 入门》电子书，快速上手服务端开发", "tutorial"));
+        m.put("前端三剑客 入门", item(499,  "HTML + CSS + JavaScript，零基础搭建现代化网页", "🎨 获得「前端开发」实战项目源码，从零到部署",  "tutorial"));
+        m.put("Python 入门",    item(99,   "打开Python大门，开启编程之旅",        "🎬 观看《Python入门》视频教程，快速上手",       "tutorial"));
+        m.put("Python后端 入门", item(399,  "掌握 Python 后端开发，构建高效 Web 服务", "📘 解锁《Python后端 入门》视频教程，共 29 集，从零到部署", "tutorial"));
         m.put("音乐播放器",      item(799,  "完整音乐播放器（含程序化曲库）", "音乐 + 音效", "media"));
         m.put("影视播放器",      item(2999, "完整影视中心",            "全剧集 + 多线路",  "media"));
         m.put("降噪耳机",       item(299,  "降噪耳机（白噪音）",      "专注模式 + 音效",  "accessory"));
@@ -148,7 +148,7 @@ public class CatalogData {
         m.put("俄罗斯方块", gp(99));
         m.put("抛硬币小游戏", gp(49));
         m.put("成语接龙", gp(99));
-        // 贪吃蛇大作战 — 免费联机游戏 (WebSocket 在 /snake_ws)
+        // 贪吃蛇大作战 — 免费单人游戏（联机已下线，本地版仍可用）
         m.put("贪吃蛇大作战", gp(0));
         return m;
     }

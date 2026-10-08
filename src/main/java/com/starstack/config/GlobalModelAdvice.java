@@ -48,6 +48,7 @@ public class GlobalModelAdvice {
 
                 ctx.setUserPoints(user.getPoints());
                 ctx.setAvatar(user.getAvatar());
+                ctx.setPhone(user.getPhone());
                 ctx.setUnlockedContent(user.getUnlockedContent());
                 ctx.setEffects(user.getEffects());
                 ctx.setHasCyberTshirt(user.hasEffect("cyber_tshirt"));

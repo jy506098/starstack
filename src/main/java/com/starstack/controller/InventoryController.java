@@ -31,8 +31,25 @@ public class InventoryController {
     }
 
     @GetMapping("/inventory")
-    public String inventory(Model model) {
-        model.addAttribute("items", CatalogData.ITEM_DATA);
+    public String inventory(HttpSession session, Model model) {
+        String username = (String) session.getAttribute("username");
+        if (username == null) return "redirect:/login";
+        User u = users.findById(username).orElse(null);
+        if (u == null) return "redirect:/login";
+
+        // Show only items the user actually owns (count > 0), merged with their metadata
+        Map<String, Integer> inv = u.getInventory();
+        if (inv == null) inv = new LinkedHashMap<>();
+        Map<String, Map<String, Object>> owned = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> e : inv.entrySet()) {
+            if (e.getValue() <= 0) continue;
+            Map<String, Object> meta = CatalogData.ITEM_DATA.get(e.getKey());
+            if (meta == null) continue;
+            Map<String, Object> row = new LinkedHashMap<>(meta);
+            row.put("count", e.getValue());
+            owned.put(e.getKey(), row);
+        }
+        model.addAttribute("items", owned);
         return "inventory";
     }
 

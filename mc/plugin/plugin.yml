@@ -370,7 +370,7 @@ commands:
         usage: /kickall
         aliases: [ekickall]
     ban:
-        description: Ban player
+        description: Temp-ban a player for 1 hour (auto-unbanned)
         usage: /ban <player> [reason]
         aliases: [eban]
     tempban:
@@ -674,10 +674,6 @@ commands:
         description: LuckPerms permission system
         usage: /lp <user|group|track|search|reload>
         aliases: [luckperms, permissions]
-    rpi:
-        description: Raspberry Pi (mcpi) Python bridge server
-        usage: /rpi [status|port <n>|reload|stop]
-        aliases: [raspberrypi, mcpiserver, mcpi]
     gamemode:
         description: Switch game mode
         usage: /gamemode <mode> [player]
