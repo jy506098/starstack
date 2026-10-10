@@ -226,7 +226,7 @@ public class AiJudge implements Listener {
     public void onChat(AsyncPlayerChatEvent event) {
         if (!enabled) return;
         Player p = event.getPlayer();
-        if (plugin.getAuthMe() != null && plugin.getAuthMe().isAuthenticated(p)) {
+        if (plugin.getLittleSkin() != null && plugin.getLittleSkin().isAuthenticated(p)) {
             // Only judge authenticated players
         } else {
             return; // skip unauthenticated
@@ -264,7 +264,7 @@ public class AiJudge implements Listener {
                 && event.getFrom().getBlockY() == event.getTo().getBlockY()
                 && event.getFrom().getBlockZ() == event.getTo().getBlockZ()) return;
         Player p = event.getPlayer();
-        if (plugin.getAuthMe() != null && !plugin.getAuthMe().isAuthenticated(p)) return;
+        if (plugin.getLittleSkin() != null && !plugin.getLittleSkin().isAuthenticated(p)) return;
 
         double dx = event.getTo().getX() - event.getFrom().getX();
         double dy = event.getTo().getY() - event.getFrom().getY();

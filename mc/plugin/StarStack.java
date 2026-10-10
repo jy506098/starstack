@@ -114,6 +114,7 @@ public class StarStack extends JavaPlugin implements Listener {
     private MagisterAC magisterAC;
     private LuckPerms luckPerms;
     private AiJudge aiJudge;
+    private LittleSkin littleSkin;
 
     public AuthMe getAuthMe() { return authMe; }
     public Claims getClaims() { return claims; }
@@ -126,6 +127,7 @@ public class StarStack extends JavaPlugin implements Listener {
     public MagisterAC getMagisterAC() { return magisterAC; }
     public LuckPerms getLuckPerms() { return luckPerms; }
     public AiJudge getAiJudge() { return aiJudge; }
+    public LittleSkin getLittleSkin() { return littleSkin; }
 
     @Override
     public void onEnable() {
@@ -157,6 +159,8 @@ public class StarStack extends JavaPlugin implements Listener {
         luckPerms.register();
         this.aiJudge = new AiJudge(this);
         aiJudge.register();
+        this.littleSkin = new LittleSkin(this);
+        littleSkin.register();
 
         // Auth-timeout kick: every 1 s, scan players that joined but never authed
         // and boot them after AUTH_TIMEOUT_MS. AuthMe blocks them from doing
@@ -169,7 +173,7 @@ public class StarStack extends JavaPlugin implements Listener {
                 Map.Entry<UUID, Long> entry = it.next();
                 Player p = Bukkit.getPlayer(entry.getKey());
                 if (p == null || !p.isOnline()) { it.remove(); continue; }
-                if (authMe.isAuthenticated(p)) {
+                if (littleSkin.isAuthenticated(p)) {
                     if (authFailCounts.containsKey(entry.getKey())) {
                         authFailCounts.remove(entry.getKey());
                         saveFailCounters();
@@ -225,6 +229,7 @@ public class StarStack extends JavaPlugin implements Listener {
         if (magisterAC != null) magisterAC.save();
         if (luckPerms != null) luckPerms.save();
         if (aiJudge != null) aiJudge.save();
+        if (littleSkin != null) littleSkin.save();
         SkinsRestorerBridge.shutdown();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (playerGame.containsKey(p.getUniqueId())) {
@@ -832,7 +837,7 @@ public class StarStack extends JavaPlugin implements Listener {
         // (and so we don't race with any session-bootstrap code).
         Bukkit.getScheduler().runTaskLater(this, () -> {
             if (!p.isOnline()) return;
-            if (!authMe.isAuthenticated(p)) {
+            if (!littleSkin.isAuthenticated(p)) {
                 unauthedJoinTimes.put(p.getUniqueId(), System.currentTimeMillis());
             }
         }, 1L);
@@ -932,11 +937,39 @@ public class StarStack extends JavaPlugin implements Listener {
         if (cmd.equalsIgnoreCase("skins")) {
             return handleSkins(sender);
         }
-        // AuthMe commands
-        if (cmd.equalsIgnoreCase("register")) return authMe.handleRegister(sender, args);
-        if (cmd.equalsIgnoreCase("login")) return authMe.handleLogin(sender, args);
-        if (cmd.equalsIgnoreCase("changepassword")) return authMe.handleChangePassword(sender, args);
-        if (cmd.equalsIgnoreCase("logout")) return authMe.handleLogout(sender, args);
+        // Auth commands routed through LittleSkin sub-module. Auth happens
+        // via authlib-injector at the wire level (started with
+        // -javaagent:authlib-injector.jar=<providerBaseUrl>); the
+        // in-game commands are no-op helpers that print a hint.
+        if (cmd.equalsIgnoreCase("register")) return littleSkin.handleRegister(sender, args);
+        if (cmd.equalsIgnoreCase("login")) return littleSkin.handleLogin(sender, args);
+        if (cmd.equalsIgnoreCase("changepassword")) return littleSkin.handleChangePassword(sender, args);
+        if (cmd.equalsIgnoreCase("logout")) return littleSkin.handleLogout(sender, args);
+        // /ls provider — switch Yggdrasil provider at runtime (OP only).
+        // The wire-side switch still requires a server restart with the
+        // matching -javaagent:… URL; this command updates the recorded
+        // config and the next restart's expected URL.
+        if (cmd.equalsIgnoreCase("ls") || cmd.equalsIgnoreCase("littleskin")) {
+            if (args.length >= 1 && args[0].equalsIgnoreCase("provider")) {
+                if (sender instanceof Player p && !p.isOp()) {
+                    p.sendMessage("§c需要 OP 权限切换 Yggdrasil 提供方");
+                    return true;
+                }
+                if (args.length == 1) {
+                    sender.sendMessage("§7当前 Yggdrasil 提供方: §b" + littleSkin.getProviderName()
+                            + " §7(§f" + littleSkin.getBaseUrl() + "§7)");
+                    return true;
+                }
+                littleSkin.setProvider(args[1], null);
+                sender.sendMessage("§aYggdrasil 已切换为: §b" + littleSkin.getProviderName()
+                        + " §7(§f" + littleSkin.getBaseUrl() + "§7)");
+                sender.sendMessage("§e⚠ 需要重启 MC 并用 §b-javaagent:authlib-injector.jar="
+                        + littleSkin.getBaseUrl() + " §e启动才生效");
+                return true;
+            }
+            sender.sendMessage("§7用法: /ls provider [name]");
+            return true;
+        }
         // Claims command
         if (cmd.equalsIgnoreCase("claim")) return claims.handleClaim(sender);
         // TreeMiner command

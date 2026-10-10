@@ -13,7 +13,8 @@ echo [java] 使用 %JAVA_EXE%
 "%JAVA_EXE%" -version
 
 echo.
-echo [INFO] 离线模式（online-mode=false），任何玩家名都能加入
+echo [INFO] 在线模式（online-mode=true）+ authlib-injector → LittleSkin
+echo [INFO] 玩家必须在启动器（HMCL / PCL2）里配置 LittleSkin 验证才能连服
 echo [INFO] 正在启动 MC 服务端（后台日志: logs\latest.log）...
-"%JAVA_EXE%" -Xms1G -Xmx4G -jar server.jar nogui
+"%JAVA_EXE%" -Xms1G -Xmx4G -javaagent:authlib-injector.jar=https://littleskin.cn/api/yggdrasil -jar server.jar nogui
 pause

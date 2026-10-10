@@ -31,10 +31,14 @@ fi
 echo "正在启动 StarStack MC 服务器..."
 echo "本机绑定: 10.0.0.124:25565"
 echo "公网域名: jy.yoliyo.cn"
-echo "登录认证: 离线模式（online-mode=false）"
+echo "登录认证: 在线模式（online-mode=true）+ authlib-injector → LittleSkin"
 echo "提示:     确保路由器把外网 25565 转发到 10.0.0.124:25565"
 echo
 
-# 在线模式关闭，不需要 authlib-injector 拦截 Yggdrasil
+# 在线模式：让 authlib-injector 把 Mojang authlib 替换成 LittleSkin Yggdrasil
+# （玩家必须在 HMCL/PCL2 启动器里添加 LittleSkin 验证才能连服）
+# TCSkins（备用，需 ISP 能联通）：https://tcsskins.tcscraft.com/api/yggdrasil
+AUTH_INJECTOR_URL="https://littleskin.cn/api/yggdrasil"
 "$JAVA" -Xms"$MIN_RAM" -Xmx"$MAX_RAM" \
+    -javaagent:authlib-injector.jar="$AUTH_INJECTOR_URL" \
     -jar "$SERVER_JAR" nogui

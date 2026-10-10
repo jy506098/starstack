@@ -43,6 +43,10 @@ commands:
     logout:
         description: AuthMe logout
         usage: /logout
+    ls:
+        description: LittleSkin Yggdrasil provider switcher
+        usage: /ls provider [name]
+        aliases: [littleskin]
     # EssentialsX home
     home:
         description: Teleport home
